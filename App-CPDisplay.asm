@@ -3,7 +3,7 @@
 ;@                S y m b O S   -   C o n t r o l   P a n e l                 @
 ;@                              DISPLAY SETTINGS                              @
 ;@                                                                            @
-;@             (c) 2004-2015 by Prodatron / SymbiosiS (Jörn Mika)             @
+;@             (c) 2004-2025 by Prodatron / SymbiosiS (Jörn Mika)             @
 ;@                                                                            @
 ;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -65,7 +65,7 @@ prgmemtab   db "SymExe10"           ;SymbOS-EXE-Kennung                 POST Tab
             dw 0                    ;zusätzlicher Data-Speicher
             dw 0                    ;zusätzlicher Transfer-Speicher
             ds 26                   ;*reserviert*
-            db 1,3                  ;required OS version (3.0)
+            db 1,4                  ;required OS version (4.1)
 
 prgicndsp2 db 2,8,8,#77,#EE,#BC,#D3,#E8,#F1,#D8,#F1,#F8,#F1,#F8,#F1,#BC,#D3,#77,#EE
 prgicndsp1 db 6,24,24,#00,#77,#FF,#FF,#FF,#CC,#00,#8F,#0F,#1F,#87,#64,#11,#0F,#0F,#1F,#86,#EC,#22,#00,#00,#33,#D9,#EC,#45,#0F,#0F,#3F,#DB,#EC,#45,#FF,#FF,#DE,#97,#EC,#45,#F0,#F0,#F3,#FB,#EC,#45,#C0,#F0,#E2,#5E,#EC
@@ -85,6 +85,7 @@ windatsup   equ 51      ;Nummer des Superfensters+1 oder 0
 prgid   db "CP:Display",0,0
 
 prgprz  call prgdbl
+        call prglng
         ld a,(prgprzn)
         ld (prgwindsp+windatprz),a
         ld (prgwincol+windatprz),a
@@ -236,6 +237,49 @@ prgfoc  ld a,(prgwin)
         ld c,MSC_DSK_WINMID
         call msgsnd
         jp prgprz0
+
+;### PRGLNG -> load language pack
+prglnge db ".exe",0
+
+prglng  ld hl,(prgcodbeg)
+        ld de,prgcodbeg
+        dec h
+        add hl,de               ;HL=code area end=path
+        push hl
+prglng1 ld a,(hl)
+        inc hl
+        or a
+        jr nz,prglng1
+        ld bc,-11
+        add hl,bc
+        ex de,hl
+        ld hl,prglnge
+        ld bc,5
+        ldir
+        pop de
+        ld a,(prgbnknum)
+        ld c,a
+        ld hl,texts_int
+        ld ix,256*1+9           ;default language=9 (english), pack=1
+        ld iyl,0                ;language-file version 0
+        jp SySystem_LNGLOD
+
+SySystem_LNGLOD
+        ld (prgmsgb+6),a
+        ld (prgmsgb+7),bc
+        ld (prgmsgb+8),hl
+        ld (prgmsgb+10),ix
+        ld (prgmsgb+12),iy
+        ld a,(prgbnknum)
+        ld iyh,a
+        ld c,MSC_SYS_EXTFNC
+        ld l,FNC_DXT_LNGLOD
+        call SySystem_SendMessage
+SySLLo1 call SySystem_WaitMessage
+        cp MSR_SYS_EXTFNC
+        jr nz,SySLLo1
+        ld a,(prgmsgb+1)
+        ret
 
 ;### PRGDBL -> Test, ob Programm bereits läuft
 prgdbl  xor a
@@ -544,28 +588,15 @@ SySWMs1 db #dd:ld h,3       ;3 is the number of the system manager process
 ;### DISPLAY-FENSTER ##########################################################
 ;==============================================================================
 
-cfghrdtyp   db 0    ;bit[0-4] Computer type     0=464, 1=664, 2=6128, 3=464Plus, 4=6128Plus,
-                    ;                               5=*reserved*
-                    ;                           6=Enterprise 64/128,
-                    ;                           7=MSX1, 8=MSX2, 9=MSX2+, 10=MSX TurboR,
-                    ;                               11=*reserved*
-                    ;                           12=PCW8xxx, 13=PCW9xxx
-                    ;                           14=PcW16
-                    ;                           15=NC100, 16=NC150, 17=NC200
-                    ;                           18=SymbOS Virtual Machine
-                    ;                               19=*reserved*
-                    ;                           20=ZX Spectrum Next
-                    ;                               21-31=*reserved*
-
 ;### DSPINI -> Display-Fenster initialisieren
 dspini  ld hl,jmp_sysinf            ;*** Computer-Typ holen
         ld de,256*6+5
         ld ix,cfgsf2flg
         ld iy,66+2+6+8-5
         rst #28
-        ld a,(cfgcpctyp)
+        ld a,(cfghrdtyp)
         and #1f
-        ld (cfgcpctyp),a
+        ld (cfghrdtyp),a
         cp 7
         jr nc,dspini8
         ld a,(cfgsf2flg)            ;cpc/ep
@@ -590,12 +621,15 @@ dspinid cp 18
 dspinif jr nc,dspinie
         ld hl,dspmodobj15           ;nc
         ld (prgdatdspd0+4+16),hl
-        ld hl,dspmodobj16
-        ld (prgdatdspd0+4+32),hl
         ld hl,dspmodobj14
-        ld a,15
+        ld a,14
         jr dspini3
-dspinie cp 20
+dspinie cp 19
+        jr nz,dpsinih
+        ld hl,dspmodobj31           ;isa
+        ld a,13
+        jr dspini3
+dpsinih cp 20
         ;jr nz,...
         ld hl,dspmodobj20           ;nxt
         ld (prgdatdspd0+4+16),hl
@@ -690,7 +724,7 @@ dspini1 call msgdsk
         ldir
         call prgbrc1
         call dspcsh                 ;*** Farben holen und setzen
-dspini6 ld a,(cfgcpctyp)            ;*** Color-Def an Farbtiefe/System anpassen
+dspini6 ld a,(cfghrdtyp)            ;*** Color-Def an Farbtiefe/System anpassen
         ld hl,29*256+16
         cp 6
         jr nz,dspinib
@@ -871,7 +905,7 @@ dspbrw  ld a,1
         jp prgprz0
 
 ;### DSPSET -> "Modi"-Tab -> Screenmode wurde per Slider geklickt
-dspset  ld a,(cfgcpctyp)
+dspset  ld a,(cfghrdtyp)
         cp 18
         ld a,(dspobjdatu+2)     ;rechnet slider-stellung in mode+vir um
         jr nz,dspset6
@@ -893,11 +927,12 @@ dspset6 add a
         ld b,(hl)
         ld (dspmodstab),bc
         inc hl
+        ld bc,0
 dspset7 call dspset5
         ld e,15
         call dsppn6
         jp dspmds
-dspset1 ld a,(cfgcpctyp)
+dspset1 ld a,(cfghrdtyp)
         cp 18
         ld a,(dspmodstab)       ;rechnet mode+vir in slider stellung um
         jr nz,dspset8
@@ -947,7 +982,8 @@ dspmdst dw sprdspmd2                                            ;0      pcw
         dw sprdspmd0,sprdspmd1,sprdspmd2                        ;14-16  nc
         dw 0        ,0        ,0                                ;17-19  *not defined*
         dw sprdspmd2,sprdspmd2                                  ;20-21  znx
-        dw 0,0,0,0,0,0,0,0,0,0                                  ;22-31  *not defined*
+        dw 0,0,0,0,0,0,0,0                                      ;22-29  *not defined*
+        dw sprdspmd0,sprdspmd1                                  ;30-31  ngz/isa
         dw sprdspmd0,sprdspmd0,sprdspmd0,sprdspmd0,sprdspmd0    ;32-45  svm
         dw sprdspmd1,sprdspmd1,sprdspmd1,sprdspmd1,sprdspmd1
         dw sprdspmd2,sprdspmd2,sprdspmd2,sprdspmd2
@@ -1421,16 +1457,6 @@ db 3,1,0,1,0
 db 3,2,0,1,0
 db 1,2,3,0,0
 
-dspobjtxtrx db "Frame 1 ",0
-            db "Frame 2 ",0
-            db "Backgr. ",0
-            db "Text    ",0
-dspobjtxtry db "Colour 1",0
-            db "Colour 2",0
-            db "Colour 3",0
-            db "Colour 4",0
-dspobjtxtrz db "Bar "
-
 ;### COLGET -> Setzt Zeiger auf Nibble-Gruppe
 ;### Eingabe    A=Nummer
 ;### Ausgabe    IX=Zeiger
@@ -1508,13 +1534,13 @@ colakt4 ld de,16
         jr c,colakt9
         ld hl,dspobjtxtry
 colakt9 ld de,dspobjtxtr1
-        ld bc,4*9
+        ld bc,4*3
         ldir
         cp 2
         jr nz,colakta
         ld hl,dspobjtxtrz
-        ld de,dspobjtxtr1+27
-        ld bc,4
+        ld de,3*3+dspobjtxtr1
+        ld bc,3
         ldir
 colakta ld c,a                      ;** Example
         add a
@@ -1747,107 +1773,6 @@ db #83,#02,#11,#11,#11,#11,#76,#66,#17,#13,#33,#18,#83,#02,#11,#11,#11,#17,#67,#
 db #83,#02,#22,#22,#76,#66,#17,#18,#E1,#23,#31,#88,#83,#33,#33,#37,#67,#66,#71,#FE,#E1,#33,#18,#88,#88,#11,#11,#76,#66,#17,#11,#F8,#E1,#11,#88,#88,#88,#88,#33,#27,#66,#71,#21,#FE,#E1,#88,#88,#88
 db #88,#83,#20,#20,#17,#12,#22,#F8,#E1,#18,#88,#88,#88,#83,#02,#02,#21,#22,#22,#21,#13,#18,#88,#88,#88,#88,#11,#20,#02,#00,#22,#33,#11,#88,#88,#88,#88,#88,#88,#11,#11,#11,#11,#11,#88,#88,#88,#88
 
-;Anzeige
-prgtitdsp   db "Display",0
-prgtitcol   db "Palette",0
-
-prgbuttxt1  db "Ok",0
-prgbuttxt2  db "Cancel",0
-prgbuttxt3  db "Apply",0
-prgbuttxt4  db "Load",0
-prgbuttxt5  db "Save",0
-prgbuttxt6  db "Define...",0
-prgbuttxt7  db "Taskbar...",0
-
-;### DISPLAY ##################################################################
-
-dsptabtxt1  db "Deskt.",0
-dsptabtxt2  db "Saver",0
-dsptabtxt3  db "Colours",0
-dsptabtxt4  db "Modi",0
-
-dspobjtxtb  db "Background",0
-dspobjtxtc  db 0
-dspobjtxtd  db "Browse...",0
-dspobjtxte  db "Browse",0
-dspobjtxtf  db "Setup",0
-dspobjtxtg  db "Screensaver",0
-dspobjtxth  db "Wait",0
-dspobjtxti  db "min",0
-dspobjtxtj  db "Test",0
-
-dspobjtxt2  db "Elements",0
-dspobjtxtk  db "Definition",0
-dspobjtxt3  db "Palette",0
-dspobjtxt4  db "R",0
-dspobjtxt5  db "G",0
-dspobjtxt6  db "B",0
-dspobjtxt7  db "Roll",0
-dspobjtxt8  db "Flip",0
-dspobjtxt9  db "Bright",0
-dspobjtxta  db "Dark",0
-dspobjdspr  db "3",0
-dspobjdspg  db "6",0
-dspobjdspb  db "9",0
-
-dspobjtxt1  db "Screenmodi",0
-dspobjtxm0  db "720 x 256 (2 colours)",0
-dspobjtxm1  db "320 x 200 (4 colours)",0
-dspobjtxm2  db "640 x 200 (2 colours)",0
-dspobjtxm5  db "256 x 212 (16 colours)",0
-dspobjtxm6  db "512 x 212 (4 colours)",0
-dspobjtxm7  db "512 x 212 (16 colours)",0
-dspobjtxm14 db "480 x 128 (2 colours)",0
-dspobjtxm15 db "480 x 192 (2 colours)",0
-dspobjtxm16 db "480 x 256 (2 colours)",0
-dspobjtxm20 db "640 x 226 (16 colours)",0
-dspobjtxm21 db "640 x 256 (16 colours)",0
-
-dspobjtxm32 db "320x200 (legacy)",0
-dspobjtxm33 db "512x256 (2:1)",0
-dspobjtxm34 db "640x360 (16:9)",0
-dspobjtxm35 db "640x480 (VGA)",0
-dspobjtxm36 db "640x512 (Amiga)",0
-dspobjtxm37 db "800x480 (WVGA)",0
-dspobjtxm38 db "860x360 (43:18)",0
-dspobjtxm39 db "960x540 (qHD)",0
-dspobjtxm40 db "1280x720 (HD ready)",0
-dspobjtxm41 db "1280x1024 (Insane)",0
-dspobjtxm42 db "1720x720 (qUWQHD)",0
-dspobjtxm43 db "1920x1080 (FullHD)",0
-dspobjtxm44 db "3440x1440 (UltrawideQHD)",0
-dspobjtxm45 db "3840x1600 (QuadHD+)",0
-
-dspobjtxm8  db "Low",0
-dspobjtxm9  db "High",0
-dspobjtxma  db "384x240x16 (normal)",0
-dspobjtxmb  db "384x240x16 (512 virtual)",0
-dspobjtxmc  db "384x240x16 (1000 virtual)",0
-dspobjtxmd  db "512x212x16 (normal)",0
-dspobjtxme  db "512x212x16 (1000 virtual)",0
-dspobjtxmf  db "768x240x16 (normal)",0
-dspobjtxmg  db "768x240x16 (1000 virtual)",0
-dspobjtxmh  db "1024x212x16 (normal)",0
-
-dspobjtxtr1 db "Frame 1 ",0
-dspobjtxtr2 db "Frame 2 ",0
-dspobjtxtr3 db "Backgr. ",0
-dspobjtxtr4 db "Text    ",0
-dspobjtxtr5 db "Invert",0
-
-dspobjtxtr6 db "Preview",0
-
-dspobjtxts1 db "Title",0
-dspobjtxts2 db "Status",0
-dspobjtxts3 db "Slider",0
-dspobjtxts4 db "Menu (1)",0
-dspobjtxts5 db "Menu (2)",0
-dspobjtxts6 db "Taskbar",0
-dspobjtxts7 db "Icons",0
-dspobjtxts8 db "Content",0
-dspobjtxts9 db "Symbols",0
-dspobjtxtsa db "Startlogo",0
-
 dspobjtxmt  dw 256*0+08,dspobjtxma,256*1+08,dspobjtxmb,256*2+08,dspobjtxmc   ; 8
             dw 256*0+09,dspobjtxmd,256*2+09,dspobjtxme                       ; 9
             dw 256*0+10,dspobjtxmf,256*2+10,dspobjtxmg                       ;10
@@ -2069,9 +1994,42 @@ db #2F,#19,#FF,#1A,#FA,#3E,#8F,#0F,#0E,#0A,#00,#7E,#FD,#05,#4F,#8B
 sprdspsav db 16,64,40
 ds 16*40,#F0
 
-prgmsgpth1  db "Path too long.",0
-prgmsgpth2  db "The length of the full path",0
-prgmsgpth3  db "shouldn't exceed 32 chars.",0
+dspobjtxtc  db 0
+dspobjtxt4  db "R",0
+dspobjtxt5  db "G",0
+dspobjtxt6  db "B",0
+dspobjdspr  db "3",0
+dspobjdspg  db "6",0
+dspobjdspb  db "9",0
+
+dspobjtxm32 db "320x200 (legacy)",0
+dspobjtxm33 db "512x256 (2:1)",0
+dspobjtxm34 db "640x360 (16:9)",0
+dspobjtxm35 db "640x480 (VGA)",0
+dspobjtxm36 db "640x512 (Amiga)",0
+dspobjtxm37 db "800x480 (WVGA)",0
+dspobjtxm38 db "860x360 (43:18)",0
+dspobjtxm39 db "960x540 (qHD)",0
+dspobjtxm40 db "1280x720 (HD ready)",0
+dspobjtxm41 db "1280x1024 (Insane)",0
+dspobjtxm42 db "1720x720 (qUWQHD)",0
+dspobjtxm43 db "1920x1080 (FullHD)",0
+dspobjtxm44 db "3440x1440 (UltrawideQHD)",0
+dspobjtxm45 db "3840x1600 (QuadHD+)",0
+
+
+;==============================================================================
+;%%% MULTI LANGUAGE TEXTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;==============================================================================
+
+texts_int
+read"App-CPDisplay-texts.asm"
+texts_int_end
+
+list
+texts_int_len   equ texts_int_end-texts_int
+nolist
+
 
 ;==============================================================================
 ;### TRANSFER-TEIL ############################################################
@@ -2092,7 +2050,7 @@ prgmsgpth  dw prgmsgpth1,4*1+2,prgmsgpth2,4*1+2,prgmsgpth3,4*1+2
 
 ;### DISPLAY ##################################################################
 
-prgwindsp  dw #1501,0,55,8,128,150,0,0,128,150,128,150,128,150, prgicndsp2,prgtitdsp,0,0
+prgwindsp  dw #1501,0,55,8,144,150,0,0,144,150,144,150,144,150, prgicndsp2,prgtitdsp,0,0
 prgwindsp0 dw prggrpdspa,0,0:ds 136+14
 
 prggrpdspa db 23,0:dw prgdatdspa,0,0,4*256+3,0,0,2
@@ -2106,17 +2064,17 @@ dsptabdat0 db 0:dw dsptabtxt1:db -1:dw dsptabtxt2:db -1:dw dsptabtxt3:db -1:dw d
 ;Desktop-Tab
 prgdatdspa
 dw      0,255*256+0,          2,  0,0,1000,1000,0       ;00=Hintergrund
-dw dsptab,255*256+20, dsptabdat,  0,  2,128, 11,0       ;01=Tab-Leiste
-dw dspoky,255*256+16,prgbuttxt1,  23,135,32,12,0        ;02="Ok"-Button
-dw dspcnc,255*256+16,prgbuttxt2,  58,135,32,12,0        ;03="Cancel"-Button
-dw dspapl,255*256+16,prgbuttxt3,  93,135,32,12,0        ;04="Apply"-Button
-dw      0,255*256+8,  sprdspmonu, 24, 17,80, 9,0        ;05=Grafik Monitor Up
-dw      0,255*256+8,  sprdspmond, 24, 66,80,11,0        ;06=Grafik Monitor Down
-dw 0,255*256+8:prgdatdspa1 dw sprdspbgr,32,26,64,40,0   ;07=Grafik Monitor-Inhalt
-dw      0,255*256+8,  sprdspmonl, 24, 24, 8,44,0        ;08=Grafik Monitor Left
-dw      0,255*256+8,  sprdspmonr, 96, 24, 8,44,0        ;09=Grafik Monitor Right
-dw      0,255*256+8,  sprdspmonb, 44, 77,40, 5,0        ;10=Grafik Monitor Base
-dw      0,255*256+3, dspobjdate,   0,86,128,48,0        ;11=Rahmen Screenmodes
+dw dsptab,255*256+20, dsptabdat,  0,  2,144, 11,0       ;01=Tab-Leiste
+dw dspoky,255*256+16,prgbuttxt1,   3,135,44,12,0        ;02="Ok"-Button
+dw dspcnc,255*256+16,prgbuttxt2,  50,135,44,12,0        ;03="Cancel"-Button
+dw dspapl,255*256+16,prgbuttxt3,  97,135,44,12,0        ;04="Apply"-Button
+dw      0,255*256+8,  sprdspmonu, 32, 17,80, 9,0        ;05=Grafik Monitor Up
+dw      0,255*256+8,  sprdspmond, 32, 66,80,11,0        ;06=Grafik Monitor Down
+dw 0,255*256+8:prgdatdspa1 dw sprdspbgr,40,26,64,40,0   ;07=Grafik Monitor-Inhalt
+dw      0,255*256+8,  sprdspmonl, 32, 24, 8,44,0        ;08=Grafik Monitor Left
+dw      0,255*256+8,  sprdspmonr,104, 24, 8,44,0        ;09=Grafik Monitor Right
+dw      0,255*256+8,  sprdspmonb, 52, 77,40, 5,0        ;10=Grafik Monitor Base
+dw      0,255*256+3, dspobjdate,   0,86,144,48,0        ;11=Rahmen Screenmodes
 dw      0,255*256+2, 0*16+1+4+64, 17,109, 14,8,0        ;12=Fläche "Hintergrund 0"
 dw      0,255*256+2, 1*16+1+4+64, 45,109, 14,8,0        ;13=Fläche "Hintergrund 1"
 dw      0,255*256+2, 2*16+1+4+64, 17,118, 14,8,0        ;14=Fläche "Hintergrund 2"
@@ -2126,8 +2084,8 @@ dw dspbgc,255*256+18,dspobjdatg,  37,109, 28,8,0        ;17=Radiobutton "Hinterg
 dw dspbgc,255*256+18,dspobjdath,   9,118, 28,8,0        ;18=Radiobutton "Hintergrund 2"
 dw dspbgc,255*256+18,dspobjdati,  37,118, 28,8,0        ;19=Radiobutton "Hintergrund 3"
 dw dspbgc,255*256+18,dspobjdatj,   9, 98,  8,8,0        ;20=Radiobutton "Grafikfile"
-dw      0,255*256+32,dspobjdatk,  17, 96,102,12,0       ;21=Textinput   "Grafikfile"
-dw dspbrw,255*256+16,dspobjtxtd,  71,109, 48,12,0       ;22=Button "Durchsuchen"
+dw      0,255*256+32,dspobjdatk,  17, 96,118,12,0       ;21=Textinput   "Grafikfile"
+dw dspbrw,255*256+16,dspobjtxtd,  87,109, 48,12,0       ;22=Button "Durchsuchen"
 
 dspobjdate dw dspobjtxtb,2+4
 dspobjdatf dw dspobjstab,dspobjtxtc,256*0  +2+4,dspobjkrdb
@@ -2145,53 +2103,53 @@ dspobjdatkb ds 256
 ;Colour-Tab
 prgdatdspe
 dw 0,255*256+0,          2,  0,0,1000,1000,0            ;00=Hintergrund
-dw dsptab,255*256+20, dsptabdat,  0,  2,128, 11,0       ;01=Tab-Leiste
-dw dspoky,255*256+16,prgbuttxt1,  23,135,32,12,0        ;02="Ok"-Button
-dw dspcnc,255*256+16,prgbuttxt2,  58,135,32,12,0        ;03="Cancel"-Button
-dw dspapl,255*256+16,prgbuttxt3,  93,135,32,12,0        ;04="Apply"-Button
-dw      0,255*256+3, dspobjdat2,   0,14,128,76,0        ;05=Rahmen Colours
-dw      0,255*256+3, dspobjdat3,   0,90,128,44,0        ;06=Rahmen Palette
+dw dsptab,255*256+20, dsptabdat,  0,  2,144, 11,0       ;01=Tab-Leiste
+dw dspoky,255*256+16,prgbuttxt1,   3,135,44,12,0        ;02="Ok"-Button
+dw dspcnc,255*256+16,prgbuttxt2,  50,135,44,12,0        ;03="Cancel"-Button
+dw dspapl,255*256+16,prgbuttxt3,  97,135,44,12,0        ;04="Apply"-Button
+dw      0,255*256+3, dspobjdat2,   0,14,144,76,0        ;05=Rahmen Colours
+dw      0,255*256+3, dspobjdat3,   0,90,144,44,0        ;06=Rahmen Palette
 
-dw colakt,255*256+42,dspobjdats0,    7, 25,54,10,0      ;07=Element-Auswahl
-dw collod,255*256+16,prgbuttxt4,     7, 71,26,12,0      ;08=Button "Load"
-dw colsav,255*256+16,prgbuttxt5,    35, 71,26,12,0      ;09=Button "Save"
+dw colakt,255*256+42,dspobjdats0,    7, 25,62,10,0      ;07=Element-Auswahl
+dw collod,255*256+16,prgbuttxt4,     7, 71,30,12,0      ;08=Button "Load"
+dw colsav,255*256+16,prgbuttxt5,    39, 71,30,12,0      ;09=Button "Save"
 
-dw      0,255*256+18,dspobjdatr1,   66, 26,43,08,0      ;10=Radio  Farbe 1
-dw      0,255*256+18,dspobjdatr2,   66, 38,43,08,0      ;11=Radio  Farbe 2
-dw      0,255*256+18,dspobjdatr3,   66, 50,43,08,0      ;12=Radio  Farbe 3
-dw      0,255*256+18,dspobjdatr4,   66, 62,43,08,0      ;13=Radio  Farbe 4
-dw      0,255*256+18,dspobjdatr5,   66, 74,43,08,0      ;14=Radio  Farbe 5
+dw      0,255*256+18,dspobjdatr1,   74, 26,50,08,0      ;10=Radio  Farbe 1
+dw      0,255*256+18,dspobjdatr2,   74, 38,50,08,0      ;11=Radio  Farbe 2
+dw      0,255*256+18,dspobjdatr3,   74, 50,50,08,0      ;12=Radio  Farbe 3
+dw      0,255*256+18,dspobjdatr4,   74, 62,50,08,0      ;13=Radio  Farbe 4
+dw      0,255*256+18,dspobjdatr5,   74, 74,50,08,0      ;14=Radio  Farbe 5
 prgdatdspe1
-dw      0,255*256+2, 256*19+00+192,111, 25,10,10,0      ;15=Button Farbe 1
-dw      0,255*256+2, 256*19+01+192,111, 37,10,10,0      ;16=Button Farbe 2
-dw      0,255*256+2, 256*19+02+192,111, 49,10,10,0      ;17=Button Farbe 3
-dw      0,255*256+2, 256*19+03+192,111, 61,10,10,0      ;18=Button Farbe 4
-dw      0,255*256+2, 256*19+04+192,111, 73,10,10,0      ;19=Button Farbe 5
+dw      0,255*256+2, 256*19+00+192,125, 25,12,10,0      ;15=Button Farbe 1
+dw      0,255*256+2, 256*19+01+192,125, 37,12,10,0      ;16=Button Farbe 2
+dw      0,255*256+2, 256*19+02+192,125, 49,12,10,0      ;17=Button Farbe 3
+dw      0,255*256+2, 256*19+03+192,125, 61,12,10,0      ;18=Button Farbe 4
+dw      0,255*256+2, 256*19+04+192,125, 73,12,10,0      ;19=Button Farbe 5
 prgdatdspe2
-dw      0,255*256+2, 256*19+00+192,  9, 41,50,18,0      ;20=Button Example
-dw      0,255*256+1 ,dspobjdatr6,   10, 42,48, 8,0      ;21=Text   Example
-dw      0,255*256+1 ,dspobjdatr7,   10, 50,48, 8,0      ;22=Text   Example Invers
+dw      0,255*256+2, 256*19+00+192,  9, 41,58,18,0      ;20=Button Example
+dw      0,255*256+1 ,dspobjdatr6,   10, 42,56, 8,0      ;21=Text   Example
+dw      0,255*256+1 ,dspobjdatr7,   10, 50,56, 8,0      ;22=Text   Example Invers
 
-dw colset0,255*256+2, 256*19+00+192, 08,101,13,12,0     ;23=Pen0
-dw colset1,255*256+2, 256*19+01+192, 22,101,13,12,0     ;24=Pen1
-dw colset2,255*256+2, 256*19+02+192, 36,101,13,12,0     ;25=Pen2
-dw colset3,255*256+2, 256*19+03+192, 50,101,13,12,0     ;26=Pen3
+dw colset0,255*256+2, 256*19+00+192, 08,101,15,12,0     ;23=Pen0
+dw colset1,255*256+2, 256*19+01+192, 24,101,15,12,0     ;24=Pen1
+dw colset2,255*256+2, 256*19+02+192, 40,101,15,12,0     ;25=Pen2
+dw colset3,255*256+2, 256*19+03+192, 56,101,15,12,0     ;26=Pen3
 prgdatdspe3
-dw coldef,255*256+16,prgbuttxt6,     73,101,47,12,0     ;27=Button "Define"
-dw coldtb,255*256+16,prgbuttxt7,     73,115,47,12,0     ;28=Button "Taskbar"
+dw coldef,255*256+16,prgbuttxt6,     89,101,47,12,0     ;27=Button "Define"
+dw coldtb,255*256+16,prgbuttxt7,     89,115,47,12,0     ;28=Button "Taskbar"
 
-dw colset4,255*256+2, 256*19+04+192, 65,101,13,12,0     ;29=Pen4
-dw colset5,255*256+2, 256*19+05+192, 79,101,13,12,0     ;30=Pen5
-dw colset6,255*256+2, 256*19+06+192, 93,101,13,12,0     ;31=Pen6
-dw colset7,255*256+2, 256*19+07+192,107,101,13,12,0     ;32=Pen7
-dw colset8,255*256+2, 256*19+08+192, 08,114,13,12,0     ;33=Pen8
-dw colset9,255*256+2, 256*19+09+192, 22,114,13,12,0     ;34=Pen9
-dw colseta,255*256+2, 256*19+10+192, 36,114,13,12,0     ;35=Pena
-dw colsetb,255*256+2, 256*19+11+192, 50,114,13,12,0     ;36=Penb
-dw colsetc,255*256+2, 256*19+12+192, 65,114,13,12,0     ;37=Penc
-dw colsetd,255*256+2, 256*19+13+192, 79,114,13,12,0     ;38=Pend
-dw colsete,255*256+2, 256*19+14+192, 93,114,13,12,0     ;39=Pene
-dw colsetf,255*256+2, 256*19+15+192,107,114,13,12,0     ;40=Penf
+dw colset4,255*256+2, 256*19+04+192, 72,101,15,12,0     ;29=Pen4
+dw colset5,255*256+2, 256*19+05+192, 88,101,15,12,0     ;30=Pen5
+dw colset6,255*256+2, 256*19+06+192,104,101,15,12,0     ;31=Pen6
+dw colset7,255*256+2, 256*19+07+192,120,101,15,12,0     ;32=Pen7
+dw colset8,255*256+2, 256*19+08+192, 08,114,15,12,0     ;33=Pen8
+dw colset9,255*256+2, 256*19+09+192, 24,114,15,12,0     ;34=Pen9
+dw colseta,255*256+2, 256*19+10+192, 40,114,15,12,0     ;35=Pena
+dw colsetb,255*256+2, 256*19+11+192, 56,114,15,12,0     ;36=Penb
+dw colsetc,255*256+2, 256*19+12+192, 72,114,15,12,0     ;37=Penc
+dw colsetd,255*256+2, 256*19+13+192, 88,114,15,12,0     ;38=Pend
+dw colsete,255*256+2, 256*19+14+192,104,114,15,12,0     ;39=Pene
+dw colsetf,255*256+2, 256*19+15+192,120,114,15,12,0     ;40=Penf
 
 dspobjdats0 dw 8,0,dspobjdats1,0,256*0+1,dspobjdats2,0,1
 dspobjdats2 dw 0+0,1000,0,0
@@ -2270,17 +2228,17 @@ dspobjdatd dw dspobjdspb:db 0+4+128,2
 ;Modi-Tab
 prgdatdspd
 dw 0,255*256+0,          2,  0,0,1000,1000,0            ;00=Hintergrund
-dw dsptab,255*256+20, dsptabdat,  0,  2,128, 11,0       ;01=Tab-Leiste
-dw dspoky,255*256+16,prgbuttxt1,  23,135,32,12,0        ;02="Ok"-Button
-dw dspcnc,255*256+16,prgbuttxt2,  58,135,32,12,0        ;03="Cancel"-Button
-dw dspapl,255*256+16,prgbuttxt3,  93,135,32,12,0        ;04="Apply"-Button
+dw dsptab,255*256+20, dsptabdat,  0,  2,144, 11,0       ;01=Tab-Leiste
+dw dspoky,255*256+16,prgbuttxt1,   3,135,44,12,0        ;02="Ok"-Button
+dw dspcnc,255*256+16,prgbuttxt2,  50,135,44,12,0        ;03="Cancel"-Button
+dw dspapl,255*256+16,prgbuttxt3,  97,135,44,12,0        ;04="Apply"-Button
 dw      0,255*256+8,  sprdspmonu, 24, 17,80, 9,0        ;05=Grafik Monitor Up
 dw      0,255*256+8,  sprdspmond, 24, 66,80,11,0        ;06=Grafik Monitor Down
 dw 0,255*256+8:prgdatdsp1 dw sprdspmd1, 32,26,64,40,0   ;07=Grafik Monitor-Inhalt
 dw      0,255*256+8,  sprdspmonl, 24, 24, 8,44,0        ;08=Grafik Monitor Left
 dw      0,255*256+8,  sprdspmonr, 96, 24, 8,44,0        ;09=Grafik Monitor Right
 dw      0,255*256+8,  sprdspmonb, 44, 77,40, 5,0        ;10=Grafik Monitor Base
-dw 0,255*256+3, dspobjdat1,   0,86,128,48,0             ;11=Rahmen Screenmodes
+dw 0,255*256+3, dspobjdat1,   0,86,144,48,0             ;11=Rahmen Screenmodes
 prgdatdspd0
 dw dspmds,255*256+18, dspmodobj1, 9, 97,110,8,0         ;12=Radiobutton "Mode X"
 dw dspmds,255*256+18, dspmodobj2, 9,107,110,8,0         ;13=Radiobutton "Mode Y"
@@ -2306,11 +2264,12 @@ dspmodobj5 dw dspmodstab,dspobjtxm5,256*5+2+4,dspmodkrdb        ;msx
 dspmodobj6 dw dspmodstab,dspobjtxm6,256*6+2+4,dspmodkrdb
 dspmodobj7 dw dspmodstab,dspobjtxm7,256*7+2+4,dspmodkrdb
 
-dspmodobj0 dw dspmodstab,dspobjtxm0,256*0+2+4,dspmodkrdb        ;pcw
+dspmodobj0  dw dspmodstab,dspobjtxm0 ,256*0+2+4,dspmodkrdb      ;pcw
+
+dspmodobj31 dw dspmodstab,dspobjtxm31,256*31+2+4,dspmodkrdb     ;isa
 
 dspmodobj14 dw dspmodstab,dspobjtxm14,256*14+2+4,dspmodkrdb     ;nc
 dspmodobj15 dw dspmodstab,dspobjtxm15,256*15+2+4,dspmodkrdb
-dspmodobj16 dw dspmodstab,dspobjtxm16,256*16+2+4,dspmodkrdb
 
 dspmodobj20 dw dspmodstab,dspobjtxm20,256*20+2+4,dspmodkrdb     ;nxt
 dspmodobj21 dw dspmodstab,dspobjtxm21,256*21+2+4,dspmodkrdb
@@ -2322,25 +2281,25 @@ dspmodkrdb dw -1,-1
 ;Screensaver-Tab
 prgdatdspb
 dw 0,255*256+0,          2,  0,0,1000,1000,0            ;00=Hintergrund
-dw dsptab,255*256+20, dsptabdat,  0,  2,128, 11,0       ;01=Tab-Leiste
-dw dspoky,255*256+16,prgbuttxt1,  23,135,32,12,0        ;02="Ok"-Button
-dw dspcnc,255*256+16,prgbuttxt2,  58,135,32,12,0        ;03="Cancel"-Button
-dw dspapl,255*256+16,prgbuttxt3,  93,135,32,12,0        ;04="Apply"-Button
-dw      0,255*256+8,  sprdspmonu, 24, 17,80, 9,0        ;05=Grafik Monitor Up
-dw      0,255*256+8,  sprdspmond, 24, 66,80,11,0        ;06=Grafik Monitor Down
-dw 0,255*256+8:prgdatdspb1 dw sprdspsav,32,26,64,40,0   ;07=Grafik Monitor-Inhalt
-dw      0,255*256+8,  sprdspmonl, 24, 24, 8,44,0        ;08=Grafik Monitor Left
-dw      0,255*256+8,  sprdspmonr, 96, 24, 8,44,0        ;09=Grafik Monitor Right
-dw      0,255*256+8,  sprdspmonb, 44, 77,40, 5,0        ;10=Grafik Monitor Base
-dw      0,255*256+3, dspobjdatl,   0,86,128,48,0        ;11=Rahmen Screenmodes
+dw dsptab,255*256+20, dsptabdat,  0,  2,144, 11,0       ;01=Tab-Leiste
+dw dspoky,255*256+16,prgbuttxt1,   3,135,44,12,0        ;02="Ok"-Button
+dw dspcnc,255*256+16,prgbuttxt2,  50,135,44,12,0        ;03="Cancel"-Button
+dw dspapl,255*256+16,prgbuttxt3,  97,135,44,12,0        ;04="Apply"-Button
+dw      0,255*256+8,  sprdspmonu, 32, 17,80, 9,0        ;05=Grafik Monitor Up
+dw      0,255*256+8,  sprdspmond, 32, 66,80,11,0        ;06=Grafik Monitor Down
+dw 0,255*256+8:prgdatdspb1 dw sprdspsav,40,26,64,40,0   ;07=Grafik Monitor-Inhalt
+dw      0,255*256+8,  sprdspmonl, 32, 24, 8,44,0        ;08=Grafik Monitor Left
+dw      0,255*256+8,  sprdspmonr,104, 24, 8,44,0        ;09=Grafik Monitor Right
+dw      0,255*256+8,  sprdspmonb, 52, 77,40, 5,0        ;10=Grafik Monitor Base
+dw      0,255*256+3, dspobjdatl,   0,86,144,48,0        ;11=Rahmen Screenmodes
 dw savchk,255*256+17,dspobjdatq,   8, 99,  8,8,0        ;12=Checkbtn  "Screensaver-File"
-dw      0,255*256+32,dspobjdatm,  16, 97, 65,12,0       ;13=Textinput "Screensaver-File"
-dw savbrw,255*256+16,dspobjtxte,  83, 97, 36,12,0       ;14=Button    "Durchsuchen"
-dw savtst,255*256+16,dspobjtxtj,  61,113, 26,12,0       ;15=Button    "Test"
-dw savcfg,255*256+16,dspobjtxtf,  89,113, 30,12,0       ;16=Button    "Setup"
+dw      0,255*256+32,dspobjdatm,  16, 97, 69,12,0       ;13=Textinput "Screensaver-File"
+dw savbrw,255*256+16,dspobjtxtd,  87, 97, 48,12,0       ;14=Button    "Durchsuchen"
+dw savtst,255*256+16,dspobjtxtj,  65,113, 34,12,0       ;15=Button    "Test"
+dw savcfg,255*256+16,dspobjtxtf, 101,113, 34,12,0       ;16=Button    "Setup"
 dw      0,255*256+1 ,dspobjdatn,   8,115, 18, 8,0       ;17=Text      "Wait"
-dw      0,255*256+32,dspobjdato,  26,113, 16,12,0       ;18=Textinput "Wait"
-dw      0,255*256+1 ,dspobjdatp,  44,115,  8,12,0       ;19=Text      "Minutes"
+dw      0,255*256+32,dspobjdato,  30,113, 16,12,0       ;18=Textinput "Wait"
+dw      0,255*256+1 ,dspobjdatp,  47,115,  8,12,0       ;19=Text      "Minutes"
 
 dspobjdatl dw dspobjtxtg,2+4
 dspobjdatn dw dspobjtxth,2+4
@@ -2360,7 +2319,7 @@ cfgdskvir   db 0    ;virtual desktop (0=no virtual desktop, Bit[0-3] -> X-resolu
 cfgicnanz   db 4    ;Desktop  -> Anzahl Icons
 cfgmenanz   db 1    ;Desktop  -> Anzahl Startmenu-Programm-Einträge
 cfglstanz   db 0    ;Desktop  -> Anzahl Taskleisten-Shortcuts
-cfgcpctyp   db 0    ;Hardware -> Computer-Typ
+cfghrdtyp   db 0    ;Hardware -> Computer-Typ
 
 cfgbgrmem   db 0:ds 32
 

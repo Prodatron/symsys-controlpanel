@@ -64,7 +64,7 @@ prgmemtab   db "SymExe10"           ;SymbOS-EXE-Kennung                 POST Tab
             dw 0                    ;zusätzlicher Data-Speicher
             dw 0                    ;zusätzlicher Transfer-Speicher
             ds 26                   ;*reserviert*
-            db 0,3                  ;required OS version (3.0)
+            db 1,4                  ;required OS version (4.1)
 prgicntim2  db 2,8,8,#33,#CC,#47,#A6,#8F,#97,#CB,#B5,#9E,#1F,#AD,#1F,#47,#A6,#33,#CC
 prgicntim1  db 6,24,24,#77,#FF,#DD,#FF,#FF,#80,#46,#0A,#3D,#0A,#0A,#C8,#C5,#05,#35,#05,#05,#AC,#C6,#68,#3D,#1A,#C2,#BE,#C5,#E1,#41,#B4,#E1,#BE,#C6,#E0,#78,#B0,#68,#BE,#C5,#61,#35,#05,#61,#BE,#C6,#68,#7F,#CE,#C2,#BE
             db #C5,#71,#8F,#3E,#C1,#BE,#C6,#6B,#3D,#8F,#82,#BE,#C5,#47,#C0,#67,#49,#BE,#C6,#9E,#10,#11,#2C,#BE,#C5,#AC,#00,#00,#AD,#BE,#D7,#2C,#10,#00,#9E,#BE,#D5,#48,#10,#88,#56,#BE,#F7,#58,#10,#D0,#56,#BE
@@ -82,6 +82,7 @@ windatprz   equ 3           ;Prozeßnummer
 prgid   db "CP:Time and "
 
 prgprz  call prgdbl
+        call prglng
         ld a,(prgprzn)
         ld (prgwintim+windatprz),a
         call timini
@@ -111,7 +112,7 @@ prgprz1 call msgdsk             ;Message holen -> IXL=Status, IXH=Absender-Proze
         ld e,a
         ld a,(prgprzn)
         ld d,a
-        ld a,50
+        ld a,10
         call msgkrl
 
 prgprz0 call msgget
@@ -144,6 +145,71 @@ prgfoc  ld a,(prgwin)
         ld c,MSC_DSK_WINMID
         call msgsnd
         jp prgprz0
+
+
+;### PRGLNG -> load language pack
+prglnge db ".exe",0
+
+prglng  ld hl,(prgcodbeg)
+        ld de,prgcodbeg
+        dec h
+        add hl,de               ;HL=code area end=path
+        push hl
+prglng1 ld a,(hl)
+        inc hl
+        or a
+        jr nz,prglng1
+        ld bc,-9
+        add hl,bc
+        ex de,hl
+        ld hl,prglnge
+        ld bc,5
+        ldir
+        pop de
+        ld a,(prgbnknum)
+        ld c,a
+        ld hl,texts_int
+        ld ix,256*4+9           ;default language=9 (english), pack=4
+        ld iyl,0                ;language-file version 0
+        jp SySystem_LNGLOD
+
+SySystem_LNGLOD
+        ld (prgmsgb+6),a
+        ld (prgmsgb+7),bc
+        ld (prgmsgb+8),hl
+        ld (prgmsgb+10),ix
+        ld (prgmsgb+12),iy
+        ld a,(prgbnknum)
+        ld iyh,a
+        ld c,MSC_SYS_EXTFNC
+        ld l,FNC_DXT_LNGLOD
+        call SySystem_SendMessage
+SySLLo1 call SySystem_WaitMessage
+        cp MSR_SYS_EXTFNC
+        jr nz,SySLLo1
+        ld a,(prgmsgb+1)
+        ret
+SySystem_SendMessage
+        ld iy,prgmsgb
+        ld (iy+0),c
+        ld (prgmsgb+1),hl
+        ld (iy+3),a
+        ld (prgmsgb+4),de
+        db #dd:ld h,3       ;3 is the number of the system manager process
+        ld a,(prgprzn)
+        db #dd:ld l,a
+        rst #10
+        ret
+SySystem_WaitMessage
+        ld iy,prgmsgb
+SySWMs1 db #dd:ld h,3       ;3 is the number of the system manager process
+        ld a,(prgprzn)
+        db #dd:ld l,a
+        rst #08             ;wait for a system manager message
+        db #dd:dec l
+        jr nz,SySWMs1
+        ld a,(iy+0)
+        ret
 
 ;### PRGDBL -> Test, ob Programm bereits läuft
 prgdbl  xor a
@@ -405,10 +471,10 @@ timini6 ld l,a
         ld (sprtimmap1+1),a     ;Breite = (24-Zeitzone)*4
         ld a,c
         add a:add a
-        add 5
+        add 5+8
         ld (prgdattimc1),a      ;Position von zweiter Grafik = 6+Breite erste Grafik
         neg
-        add 103                 ;Breite von zweiter Grafik = 98-Position
+        add 103+8               ;Breite von zweiter Grafik = 98-Position
         ld (sprtimmap2+1),a
         ld a,10
         jr nz,timini5
@@ -578,10 +644,11 @@ timcal0 ld de,(timdmon)             ;*** volles Datum anzeigen
         ld h,0
         ld de,timdatdtab
         add hl,de                   ;HL=Zeiger auf Wochentag-Name
-        ld a,(hl)
+        ld a,(hl):inc hl
+        ld h,(hl):ld l,a
         inc hl
-        ld h,(hl)
-        ld l,a
+        ld a,(hl):inc hl
+        ld h,(hl):ld l,a
         ld de,timdatftx
 timcal3 ld a,(hl)
         ldi
@@ -950,17 +1017,7 @@ db #13,#8E,#32,#1C,#CC,#CC,#CC,#CC,#32,#1E,#32,#31,#13,#E3,#22,#1C,#CC,#C1,#CC,#
 db #11,#33,#21,#CC,#CC,#3C,#CC,#CC,#C3,#21,#22,#31,#11,#33,#22,#1C,#C3,#CC,#CC,#CC,#32,#21,#33,#31,#11,#11,#32,#1C,#CC,#CC,#CC,#CC,#32,#11,#11,#11,#81,#11,#32,#21,#CC,#C1,#CC,#C3,#22,#11,#11,#18
 db #88,#88,#83,#22,#13,#CC,#C3,#32,#21,#88,#88,#88,#88,#88,#88,#32,#22,#33,#32,#22,#18,#88,#88,#88,#88,#88,#88,#83,#32,#22,#22,#11,#88,#88,#88,#88,#88,#88,#88,#88,#81,#11,#11,#88,#88,#88,#88,#88
 
-prgbuttxt1 db "Ok",0
-prgbuttxt2 db "Cancel",0
-prgbuttxt3 db "Apply",0
-
-prgtittim db "Date and Time",0
-
 ;### TIME AND DATE #############################################################
-
-timtabtxt1 db "Time",0
-timtabtxt2 db "Date",0
-timtabtxt3 db "Zone",0
 
 timwektxt  db "01",0,"02",0,"03",0,"04",0,"05",0,"06",0
 timdattxt
@@ -968,46 +1025,7 @@ db  " ",0,0,"1",0,0,"2",0,0,"3",0,0,"4",0,0,"5",0,0,"6",0,0,"7",0,0,"8",0,0,"9",
 db "10",0, "11",0, "12",0, "13",0, "14",0, "15",0, "16",0, "17",0, "18",0, "19",0
 db "20",0, "21",0, "22",0, "23",0, "24",0, "25",0, "26",0, "27",0, "28",0, "29",0
 db "30",0, "31",0
-timdattxw db "W",0,"M",0,"T",0,"W",0,"T",0,"F",0,"S",0,"S",0
 timdatytx db "    ",0
-
-timtxtchr  db "Hour",0
-timtxtcmn  db "Min.",0
-timtxtcsc  db "Sec.",0
-
-timdatmt01 db "January",0:  timdatmt02 db "February",0: timdatmt03 db "March",0
-timdatmt04 db "April",0:    timdatmt05 db "May",0:      timdatmt06 db "June",0
-timdatmt07 db "July",0:     timdatmt08 db "August",0:   timdatmt09 db "September",0
-timdatmt10 db "October",0:  timdatmt11 db "November",0: timdatmt12 db "December",0
-timdatdt0  db "Monday",0:   timdatdt1  db "Tuesday",0:  timdatdt2  db "Wednesday",0:timdatdt3  db "Thursday",0
-timdatdt4  db "Friday",0:   timdatdt5  db "Saturday",0: timdatdt6  db "Sunday",0
-
-timzontxta db "-12 Int.Dateline",0
-timzontxtb db "-11 Midway Island",0
-timzontxtc db "-10 Hawaii",0
-timzontxtd db "-09 Alaska",0
-timzontxte db "-08 Los Angeles",0
-timzontxtf db "-07 Denver, Arizona",0
-timzontxtg db "-06 Chicago",0
-timzontxth db "-05 New York",0
-timzontxti db "-04 Santiago",0
-timzontxtj db "-03 Buenos Aires",0
-timzontxtk db "-02 Middle Atlantic",0
-timzontxtl db "-01 Azores, Cabo Verde",0
-timzontxtm db "+00 London, Lissabon",0
-timzontxtn db "+01 Amsterdam, Berlin",0
-timzontxto db "+02 Kiev, Helsinki",0
-timzontxtp db "+03 Constantinople",0
-timzontxtq db "+04 Tiflis",0
-timzontxtr db "+05 Maldives",0
-timzontxts db "+06 Astana",0
-timzontxtt db "+07 Bangkok, Hanoi",0
-timzontxtu db "+08 Beijing, Perth",0
-timzontxtv db "+09 Tokyo, Seoul",0
-timzontxtw db "+10 Sydney",0
-timzontxtx db "+11 New Caledonia",0
-timzontxty db "+12 Auckland",0
-timzontxtz db "+13 Nuku'alofa",0
 
 gfxcnvtab
 dw icndatslf0,icndatslf+9:db 4,8,8,8*2
@@ -1089,6 +1107,19 @@ db #F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#F0,#
 
 
 ;==============================================================================
+;%%% MULTI LANGUAGE TEXTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;==============================================================================
+
+texts_int
+read"App-CPTime-texts.asm"
+texts_int_end
+
+list
+texts_int_len   equ texts_int_end-texts_int
+nolist
+
+
+;==============================================================================
 ;### TRANSFER-TEIL ############################################################
 ;==============================================================================
 
@@ -1102,7 +1133,7 @@ prgmsgb ds 14
 
 ;### TIME AND DATE ############################################################
 
-prgwintim  dw #1501,0,32,32,108,125,0,0,108,125,108,125,108,125, prgicntim2,prgtittim,0,0
+prgwintim  dw #1501,0,32,32,124,125,0,0,124,125,124,125,124,125, prgicntim2,prgtittim,0,0
 prgwintim0 dw prggrptima,0,0:ds 136+14
 
 prggrptima db 21,0:dw prgdattima,0,0,4*256+3,0,0,2
@@ -1115,27 +1146,27 @@ timtabdat0 db 0:dw timtabtxt1:db -1:dw timtabtxt2:db -1:dw timtabtxt3:db -1
 ;Time-Tab
 prgdattima
 dw 00,255*256+0,         2, 0,0,1000,1000,0             ;00=Hintergrund
-dw timtab,255*256+20,timtabdat,0,2,108,11,0             ;01=Tab-Leiste
-dw timoky,255*256+16,prgbuttxt1, 2,111,33,12,0          ;02="Ok"-Button
-dw timcnc,255*256+16,prgbuttxt2,37,111,34,12,0          ;03="Cancel"-Button
-dw timapl,255*256+16,prgbuttxt3,73,111,33,12,0          ;04="Apply"-Button
-dw 0,255*256+2,49*256+64+128,    2,35,104,46,0          ;05=Uhr Fläche
+dw timtab,255*256+20,timtabdat,0,2,124,11,0             ;01=Tab-Leiste
+dw timoky,255*256+16,prgbuttxt1, 2,111,38,12,0          ;02="Ok"-Button
+dw timcnc,255*256+16,prgbuttxt2,42,111,39,12,0          ;03="Cancel"-Button
+dw timapl,255*256+16,prgbuttxt3,83,111,39,12,0          ;04="Apply"-Button
+dw 0,255*256+2,49*256+64+128,    2,35,120,46,0          ;05=Uhr Fläche
 prgdattima1
-dw 0,255*256+8,0*45+sprtimfntspr,08,51,12,14,0          ;06=Uhr Stunde  Ziffer 1
-dw 0,255*256+8,1*45+sprtimfntspr,20,51,12,14,0          ;07=Uhr Stunde  Ziffer 2
-dw 0,255*256+8,2*45+sprtimfntspr,42,51,12,14,0          ;08=Uhr Minute  Ziffer 1
-dw 0,255*256+8,3*45+sprtimfntspr,54,51,12,14,0          ;09=Uhr Minute  Ziffer 2
-dw 0,255*256+8,4*45+sprtimfntspr,76,51,12,14,0          ;10=Uhr Sekunde Ziffer 1
-dw 0,255*256+8,5*45+sprtimfntspr,88,51,12,14,0          ;11=Uhr Sekunde Ziffer 2
-dw timhde,255*256+10,icndatslf,  11,83, 8, 8,0          ;12=Stunde  weniger
-dw timhin,255*256+10,icndatsrg,  20,83, 8, 8,0          ;13=Stunde  mehr
-dw timnde,255*256+10,icndatslf,  45,83, 8, 8,0          ;14=Minute  weniger
-dw timnin,255*256+10,icndatsrg,  54,83, 8, 8,0          ;15=Minute  mehr
-dw timsde,255*256+10,icndatslf,  79,83, 8, 8,0          ;16=Sekunde weniger
-dw timsin,255*256+10,icndatsrg,  88,83, 8, 8,0          ;17=Sekunde mehr
-dw 0,255*256+1,timdatchr,08,26,24,8,0                   ;18=Stunde  Beschreibung
-dw 0,255*256+1,timdatcmn,40,26,24,8,0                   ;19=Minute  Beschreibung
-dw 0,255*256+1,timdatcsc,76,26,24,8,0                   ;20=Sekunde Beschreibung
+dw 0,255*256+8,0*45+sprtimfntspr, 12,51,12,14,0         ;06=Uhr Stunde  Ziffer 1
+dw 0,255*256+8,1*45+sprtimfntspr, 24,51,12,14,0         ;07=Uhr Stunde  Ziffer 2
+dw 0,255*256+8,2*45+sprtimfntspr, 50,51,12,14,0         ;08=Uhr Minute  Ziffer 1
+dw 0,255*256+8,3*45+sprtimfntspr, 62,51,12,14,0         ;09=Uhr Minute  Ziffer 2
+dw 0,255*256+8,4*45+sprtimfntspr, 88,51,12,14,0         ;10=Uhr Sekunde Ziffer 1
+dw 0,255*256+8,5*45+sprtimfntspr,100,51,12,14,0         ;11=Uhr Sekunde Ziffer 2
+dw timhde,255*256+10,icndatslf,   15,83, 8, 8,0         ;12=Stunde  weniger
+dw timhin,255*256+10,icndatsrg,   24,83, 8, 8,0         ;13=Stunde  mehr
+dw timnde,255*256+10,icndatslf,   53,83, 8, 8,0         ;14=Minute  weniger
+dw timnin,255*256+10,icndatsrg,   62,83, 8, 8,0         ;15=Minute  mehr
+dw timsde,255*256+10,icndatslf,   91,83, 8, 8,0         ;16=Sekunde weniger
+dw timsin,255*256+10,icndatsrg,  100,83, 8, 8,0         ;17=Sekunde mehr
+dw 0,255*256+1,timdatchr,12,26,24,8,0                   ;18=Stunde  Beschreibung
+dw 0,255*256+1,timdatcmn,48,26,24,8,0                   ;19=Minute  Beschreibung
+dw 0,255*256+1,timdatcsc,88,26,24,8,0                   ;20=Sekunde Beschreibung
 
 timdatchr dw timtxtchr,2+4+512
 timdatcmn dw timtxtcmn,2+4+512
@@ -1144,52 +1175,57 @@ timdatcsc dw timtxtcsc,2+4+512
 ;Date-Tab
 prgdattimb
 dw 00,255*256+0,         2, 0,0,1000,1000,0             ;00=Hintergrund
-dw timtab,255*256+20,timtabdat,0,2,108,11,0             ;01=Tab-Leiste
-dw timoky,255*256+16,prgbuttxt1, 2,111,33,12,0          ;02="Ok"-Button
-dw timcnc,255*256+16,prgbuttxt2,37,111,34,12,0          ;03="Cancel"-Button
-dw timapl,255*256+16,prgbuttxt3,73,111,33,12,0          ;04="Apply"-Button
-dw 00,255*256+0,       3, 2,27,104,64,0                 ;05=Kalender-Hintergrund
-dw 0,255*256+1,timdatdwn, 3,28,11,8,0                   ;06=Kalender-Wochenspalte
-dw 0,255*256+1,timdatdw1,15,28,12,8,0                   ;07=Kalender-Montag
-dw 0,255*256+1,timdatdw2,28,28,12,8,0                   ;08=Kalender-Dienstag
-dw 0,255*256+1,timdatdw3,41,28,12,8,0                   ;09=Kalender-Mittwoch
-dw 0,255*256+1,timdatdw4,54,28,12,8,0                   ;10=Kalender-Donnerstag
-dw 0,255*256+1,timdatdw5,67,28,12,8,0                   ;11=Kalender-Freitag
-dw 0,255*256+1,timdatdw6,80,28,12,8,0                   ;12=Kalender-Samstag
-dw 0,255*256+1,timdatdw7,93,28,12,8,0                   ;13=Kalender-Sonntag
-dw timmde,255*256+10,icndatslf,48,16,8,8,0              ;14=Monat weniger
-dw timmin,255*256+10,icndatsrg,56,16,8,8,0              ;15=Monat mehr
-dw timyde,255*256+10,icndatslf,90,16,8,8,0              ;16=Jahr weniger
-dw timyin,255*256+10,icndatsrg,98,16,8,8,0              ;17=Jahr mehr
-dw 0,     255*256+1,timdatmdt, 2,16,46,8,0              ;18=Monat
-dw 0,     255*256+1,timdatydt,66,16,24,8,0              ;19=Jahr
-dw 0,255*256+1,timdatfdt,4,93,100,8,0                   ;20=volles Datum
+dw timtab,255*256+20,timtabdat,0,2,124,11,0             ;01=Tab-Leiste
+dw timoky,255*256+16,prgbuttxt1, 2,111,38,12,0          ;02="Ok"-Button
+dw timcnc,255*256+16,prgbuttxt2,42,111,39,12,0          ;03="Cancel"-Button
+dw timapl,255*256+16,prgbuttxt3,83,111,39,12,0          ;04="Apply"-Button
+dw 00,255*256+0,       3,  2,27,120,64,0                ;05=Kalender-Hintergrund
+dw 0,255*256+1,timdatdwn,  3,28, 13, 8,0                ;06=Kalender-Wochenspalte
+dw 0,255*256+1,timdatdw1, 17,28, 14, 8,0                ;07=Kalender-Montag
+dw 0,255*256+1,timdatdw2, 32,28, 14, 8,0                ;08=Kalender-Dienstag
+dw 0,255*256+1,timdatdw3, 47,28, 14, 8,0                ;09=Kalender-Mittwoch
+dw 0,255*256+1,timdatdw4, 62,28, 14, 8,0                ;10=Kalender-Donnerstag
+dw 0,255*256+1,timdatdw5, 77,28, 14, 8,0                ;11=Kalender-Freitag
+dw 0,255*256+1,timdatdw6, 92,28, 14, 8,0                ;12=Kalender-Samstag
+dw 0,255*256+1,timdatdw7,107,28, 14, 8,0                ;13=Kalender-Sonntag
+dw timmde,255*256+10,icndatslf, 66,16, 8,8,0            ;14=Monat weniger
+dw timmin,255*256+10,icndatsrg, 72,16, 8,8,0            ;15=Monat mehr
+dw timyde,255*256+10,icndatslf,106,16, 8,8,0            ;16=Jahr weniger
+dw timyin,255*256+10,icndatsrg,114,16, 8,8,0            ;17=Jahr mehr
+dw 0,     255*256+1,timdatmdt,   2,16,64,8,0            ;18=Monat
+dw 0,     255*256+1,timdatydt,  82,16,24,8,0            ;19=Jahr
+dw 0,255*256+1,timdatfdt,4,93,116,8,0                   ;20=volles Datum
 prgdattimb2                                             ;21=Wochennummern
-dw 0, 255*256+1,0*4+timweknum, 4,37,11,8,0
-dw 0, 255*256+1,1*4+timweknum, 4,46,11,8,0
-dw 0, 255*256+1,2*4+timweknum, 4,55,11,8,0
-dw 0, 255*256+1,3*4+timweknum, 4,64,11,8,0
-dw 0, 255*256+1,4*4+timweknum, 4,73,11,8,0
-dw 0, 255*256+1,5*4+timweknum, 4,82,11,8,0
+dw 0, 255*256+1,0*4+timweknum, 4,37,13,8,0
+dw 0, 255*256+1,1*4+timweknum, 4,46,13,8,0
+dw 0, 255*256+1,2*4+timweknum, 4,55,13,8,0
+dw 0, 255*256+1,3*4+timweknum, 4,64,13,8,0
+dw 0, 255*256+1,4*4+timweknum, 4,73,13,8,0
+dw 0, 255*256+1,5*4+timweknum, 4,82,13,8,0
 prgdattimb1                                             ;27=Tagesnummern
-dw  1,255*256+1,0*4+timdatnum,15,37,12,8,0:dw  2,255*256+1,0*4+timdatnum,28,37,12,8,0:dw  3,255*256+1,0*4+timdatnum,41,37,12,8,0
-dw  4,255*256+1,0*4+timdatnum,54,37,12,8,0:dw  5,255*256+1,0*4+timdatnum,67,37,12,8,0:dw  6,255*256+1,0*4+timdatnum,80,37,12,8,0
-dw  7,255*256+1,0*4+timdatnum,93,37,12,8,0
-dw  8,255*256+1,0*4+timdatnum,15,46,12,8,0:dw  9,255*256+1,0*4+timdatnum,28,46,12,8,0:dw 10,255*256+1,0*4+timdatnum,41,46,12,8,0
-dw 11,255*256+1,0*4+timdatnum,54,46,12,8,0:dw 12,255*256+1,0*4+timdatnum,67,46,12,8,0:dw 13,255*256+1,0*4+timdatnum,80,46,12,8,0
-dw 14,255*256+1,0*4+timdatnum,93,46,12,8,0
-dw 15,255*256+1,0*4+timdatnum,15,55,12,8,0:dw 16,255*256+1,0*4+timdatnum,28,55,12,8,0:dw 17,255*256+1,0*4+timdatnum,41,55,12,8,0
-dw 18,255*256+1,0*4+timdatnum,54,55,12,8,0:dw 19,255*256+1,0*4+timdatnum,67,55,12,8,0:dw 20,255*256+1,0*4+timdatnum,80,55,12,8,0
-dw 21,255*256+1,0*4+timdatnum,93,55,12,8,0
-dw 22,255*256+1,0*4+timdatnum,15,64,12,8,0:dw 23,255*256+1,0*4+timdatnum,28,64,12,8,0:dw 24,255*256+1,0*4+timdatnum,41,64,12,8,0
-dw 25,255*256+1,0*4+timdatnum,54,64,12,8,0:dw 26,255*256+1,0*4+timdatnum,67,64,12,8,0:dw 27,255*256+1,0*4+timdatnum,80,64,12,8,0
-dw 28,255*256+1,0*4+timdatnum,93,64,12,8,0
-dw 29,255*256+1,0*4+timdatnum,15,73,12,8,0:dw 30,255*256+1,0*4+timdatnum,28,73,12,8,0:dw 31,255*256+1,0*4+timdatnum,41,73,12,8,0
-dw 32,255*256+1,0*4+timdatnum,54,73,12,8,0:dw 33,255*256+1,0*4+timdatnum,67,73,12,8,0:dw 34,255*256+1,0*4+timdatnum,80,73,12,8,0
-dw 35,255*256+1,0*4+timdatnum,93,73,12,8,0
-dw 36,255*256+1,0*4+timdatnum,15,82,12,8,0:dw 37,255*256+1,0*4+timdatnum,28,82,12,8,0:dw 38,255*256+1,0*4+timdatnum,41,82,12,8,0
-dw 39,255*256+1,0*4+timdatnum,54,82,12,8,0:dw 40,255*256+1,0*4+timdatnum,67,82,12,8,0:dw 41,255*256+1,0*4+timdatnum,80,82,12,8,0
-dw 42,255*256+1,0*4+timdatnum,93,82,12,8,0
+dw  1,255*256+1,0*4+timdatnum,17,37,14,8,0:dw  2,255*256+1,0*4+timdatnum,32,37,14,8,0:dw  3,255*256+1,0*4+timdatnum,47,37,14,8,0
+dw  4,255*256+1,0*4+timdatnum,62,37,14,8,0:dw  5,255*256+1,0*4+timdatnum,77,37,14,8,0:dw  6,255*256+1,0*4+timdatnum,92,37,14,8,0
+dw  7,255*256+1,0*4+timdatnum,107,37,14,8,0
+
+dw  8,255*256+1,0*4+timdatnum,17,46,14,8,0:dw  9,255*256+1,0*4+timdatnum,32,46,14,8,0:dw 10,255*256+1,0*4+timdatnum,47,46,14,8,0
+dw 11,255*256+1,0*4+timdatnum,62,46,14,8,0:dw 12,255*256+1,0*4+timdatnum,77,46,14,8,0:dw 13,255*256+1,0*4+timdatnum,92,46,14,8,0
+dw 14,255*256+1,0*4+timdatnum,107,46,14,8,0
+
+dw 15,255*256+1,0*4+timdatnum,17,55,14,8,0:dw 16,255*256+1,0*4+timdatnum,32,55,14,8,0:dw 17,255*256+1,0*4+timdatnum,47,55,14,8,0
+dw 18,255*256+1,0*4+timdatnum,62,55,14,8,0:dw 19,255*256+1,0*4+timdatnum,77,55,14,8,0:dw 20,255*256+1,0*4+timdatnum,92,55,14,8,0
+dw 21,255*256+1,0*4+timdatnum,107,55,14,8,0
+
+dw 22,255*256+1,0*4+timdatnum,17,64,14,8,0:dw 23,255*256+1,0*4+timdatnum,32,64,14,8,0:dw 24,255*256+1,0*4+timdatnum,47,64,14,8,0
+dw 25,255*256+1,0*4+timdatnum,62,64,14,8,0:dw 26,255*256+1,0*4+timdatnum,77,64,14,8,0:dw 27,255*256+1,0*4+timdatnum,92,64,14,8,0
+dw 28,255*256+1,0*4+timdatnum,107,64,14,8,0
+
+dw 29,255*256+1,0*4+timdatnum,17,73,14,8,0:dw 30,255*256+1,0*4+timdatnum,32,73,14,8,0:dw 31,255*256+1,0*4+timdatnum,47,73,14,8,0
+dw 32,255*256+1,0*4+timdatnum,62,73,14,8,0:dw 33,255*256+1,0*4+timdatnum,77,73,14,8,0:dw 34,255*256+1,0*4+timdatnum,92,73,14,8,0
+dw 35,255*256+1,0*4+timdatnum,107,73,14,8,0
+
+dw 36,255*256+1,0*4+timdatnum,17,82,14,8,0:dw 37,255*256+1,0*4+timdatnum,32,82,14,8,0:dw 38,255*256+1,0*4+timdatnum,47,82,14,8,0
+dw 39,255*256+1,0*4+timdatnum,62,82,14,8,0:dw 40,255*256+1,0*4+timdatnum,77,82,14,8,0:dw 41,255*256+1,0*4+timdatnum,92,82,14,8,0
+dw 42,255*256+1,0*4+timdatnum,107,82,14,8,0
 
 timweknum
 dw 3*0+timwektxt,3+0+128
@@ -1208,34 +1244,34 @@ dw 3*20+timdattxt,4+128+256,3*21+timdattxt,4+128+256,3*22+timdattxt,4+128+256,3*
 dw 3*25+timdattxt,4+128+256,3*26+timdattxt,4+128+256,3*27+timdattxt,4+128+256,3*28+timdattxt,4+128+256,3*29+timdattxt,4+128+256
 dw 3*30+timdattxt,4+128+256,3*31+timdattxt,4+128+256
 
-timdatfdt dw     timdatftx,2+4+128+512
-timdatmdt dw     0,        0+4+128+512
-timdatydt dw     timdatytx,0+4+128+512
-timdatdwn dw 0*2+timdattxw,1+128+256
-timdatdw1 dw 1*2+timdattxw,1+128+256
-timdatdw2 dw 2*2+timdattxw,1+128+256
-timdatdw3 dw 3*2+timdattxw,1+128+256
-timdatdw4 dw 4*2+timdattxw,1+128+256
-timdatdw5 dw 5*2+timdattxw,1+128+256
-timdatdw6 dw 6*2+timdattxw,1+128+256
-timdatdw7 dw 7*2+timdattxw,1+128+256
+timdatfdt dw timdatftx, 2+4+128+512
+timdatmdt dw 0,         0+4+128+512
+timdatydt dw timdatytx, 0+4+128+512
+timdatdwn dw timdattxw0,1+128+256
+timdatdw1 dw timdattxw1,1+128+256
+timdatdw2 dw timdattxw2,1+128+256
+timdatdw3 dw timdattxw3,1+128+256
+timdatdw4 dw timdattxw4,1+128+256
+timdatdw5 dw timdattxw5,1+128+256
+timdatdw6 dw timdattxw6,1+128+256
+timdatdw7 dw timdattxw7,1+128+256
 
 timdatftx  ds 32
 
 ;Zone-Tab
 prgdattimc
 dw 00,255*256+0,         2, 0,0,1000,1000,0             ;00=Hintergrund
-dw timtab,255*256+20,timtabdat,0,2,108,11,0             ;01=Tab-Leiste
-dw timoky,255*256+16,prgbuttxt1, 2,111,33,12,0          ;02="Ok"-Button
-dw timcnc,255*256+16,prgbuttxt2,37,111,34,12,0          ;03="Cancel"-Button
-dw timapl,255*256+16,prgbuttxt3,73,111,33,12,0          ;04="Apply"-Button
-dw      0,255*256+10,sprtimmap1, 5,15,96,50,0           ;05=Grafik Worldmap links
+dw timtab,255*256+20,timtabdat,0,2,124,11,0             ;01=Tab-Leiste
+dw timoky,255*256+16,prgbuttxt1, 2,111,38,12,0          ;02="Ok"-Button
+dw timcnc,255*256+16,prgbuttxt2,42,111,39,12,0          ;03="Cancel"-Button
+dw timapl,255*256+16,prgbuttxt3,83,111,39,12,0          ;04="Apply"-Button
+dw      0,255*256+10,sprtimmap1, 5+8,15,96,50,0         ;05=Grafik Worldmap links
 dw      0,255*256+10,sprtimmap2
-prgdattimc1                   dw 5,15,96,50,0           ;06=Grafik Worldmap rechts
-dw timzon,255*256+41,timzonobj,2,67,104,42,0            ;07=Zeitzonen-Liste
+prgdattimc1                   dw 5+8,15,96,50,0         ;06=Grafik Worldmap rechts
+dw timzon,255*256+41,timzonobj,2,67,120,42,0            ;07=Zeitzonen-Liste
 
 timzonobj   dw 26,11,timzonlst,0,1,timzonrow,13,1
-timzonrow   dw 0,96,0,0
+timzonrow   dw 0,112,0,0
 timzonlst
 dw  0,timzontxta, 1,timzontxtb, 2,timzontxtc, 3,timzontxtd, 4,timzontxte, 5,timzontxtf, 6,timzontxtg
 dw  7,timzontxth, 8,timzontxti, 9,timzontxtj,10,timzontxtk,11,timzontxtl,12,timzontxtm,32768+13,timzontxtn

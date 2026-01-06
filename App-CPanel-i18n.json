@@ -1,0 +1,11 @@
+{
+    "asm": {
+        "0": "App-CPanel-Texts.asm",
+        "1": "App-CPDisplay-Texts.asm",
+        "2": "App-CPShortcuts-Texts.asm",
+        "3": "App-CPStartmenu-Texts.asm",
+        "4": "App-CPTime-Texts.asm"
+    },
+    "csv": "App-CPanel-i18n.csv",
+    "lng": "f:/symbos/cp.lng"
+}

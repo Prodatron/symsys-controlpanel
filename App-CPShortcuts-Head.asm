@@ -2,8 +2,9 @@ nolist
 
 org #1000
 
-WRITE "f:\symbos\cpstartm.exe"
 READ "..\..\..\SRC-Main\SymbOS-Constants.asm"
+
+write "f:\symbos\cpshcuts.exe"
 
 relocate_start
 
@@ -12,37 +13,34 @@ App_BegCode
 ;### APPLICATION HEADER #######################################################
 
 ;header structure
-prgdatcod       equ 0           ;Length of the code area (OS will place this area everywhere)
-prgdatdat       equ 2           ;Length of the data area (screen manager data; OS will place this area inside a 16k block of one 64K bank)
-prgdattra       equ 4           ;Length of the transfer area (stack, message buffer, desktop manager data; placed between #c000 and #ffff of a 64K bank)
-prgdatorg       equ 6           ;Original origin of the assembler code
-prgdatrel       equ 8           ;Number of entries in the relocator table
-prgdatstk       equ 10          ;Length of the stack in bytes
+prgdatcod       equ 0           ;Länge Code-Teil (Pos+Len beliebig; inklusive Kopf!)
+prgdatdat       equ 2           ;Länge Daten-Teil (innerhalb 16K Block)
+prgdattra       equ 4           ;Länge Transfer-Teil (ab #C000)
+prgdatorg       equ 6           ;Original-Origin
+prgdatrel       equ 8           ;Anzahl Einträge Relocator-Tabelle
+prgdatstk       equ 10          ;Länge Stack (Transfer-Teil beginnt immer mit Stack)
 prgdatrsv       equ 12          ;*reserved* (3 bytes)
 prgdatnam       equ 15          ;program name (24+1[0] chars)
 prgdatflg       equ 40          ;flags (+1=16colour icon available)
 prgdat16i       equ 41          ;file offset of 16colour icon
 prgdatrs2       equ 43          ;*reserved* (5 bytes)
-prgdatidn       equ 48          ;"SymExe10" SymbOS executable file identification
-prgdatcex       equ 56          ;additional memory for code area (will be reserved directly behind the loaded code area)
-prgdatdex       equ 58          ;additional memory for data area (see above)
-prgdattex       equ 60          ;additional memory for transfer area (see above)
-prgdatres       equ 62          ;*reserved* (26 bytes)
-prgdatver       equ 88          ;required OS version (3.0)
-prgdatism       equ 90          ;Application icon (small version), 8x8 pixel, SymbOS graphic format
-prgdatibg       equ 109         ;Application icon (big version), 24x24 pixel, SymbOS graphic format
-prgdatlen       equ 256         ;length of header
+prgdatidn       equ 48          ;"SymExe10"
+prgdatcex       equ 56          ;zusätzlicher Speicher für Code-Bereich
+prgdatdex       equ 58          ;zusätzlicher Speicher für Data-Bereich
+prgdattex       equ 60          ;zusätzlicher Speicher für Transfer-Bereich
+prgdatres       equ 62          ;*reserviert* (26 bytes)
+prgdatver       equ 88          ;required OS version
+prgdatism       equ 90          ;Icon (klein)
+prgdatibg       equ 109         ;Icon (gross)
+prgdatlen       equ 256         ;Datensatzlänge
 
-prgpstdat       equ 6           ;start address of the data area
-prgpsttra       equ 8           ;start address of the transfer area
-prgpstspz       equ 10          ;additional sub process or timer IDs (4*1)
-prgpstbnk       equ 14          ;64K ram bank (1-15), where the application is located
-prgpstmem       equ 48          ;additional memory areas; 8 memory areas can be registered here, each entry consists of 5 bytes
-                                ;00  1B  Ram bank number (1-8; if 0, the entry will be ignored)
-                                ;01  1W  Address
-                                ;03  1W  Length
-prgpstnum       equ 88          ;Application ID
-prgpstprz       equ 89          ;Main process ID
+prgpstdat       equ 6           ;Adresse Daten-Teil
+prgpsttra       equ 8           ;Adresse Transfer-Teil
+prgpstspz       equ 10          ;zusätzliche Prozessnummern (4*1)
+prgpstbnk       equ 14          ;Bank (1-8)
+prgpstmem       equ 48          ;zusätzliche Memory-Bereiche (8*5)
+prgpstnum       equ 88          ;Programm-Nummer
+prgpstprz       equ 89          ;Prozess-Nummer
 
             dw App_BegData-App_BegCode  ;length of code area
             dw App_BegTrns-App_BegData  ;length of data area
@@ -52,22 +50,21 @@ prgtrnadr   dw relocate_count       ;number of relocator table entries  POST add
 prgprztab   dw prgstk-App_BegTrns   ;stack length                       POST table processes
             dw 0                    ;*reserved*
 App_BnkNum  db 0                    ;*reserved*                         POST bank number
-            db "CP:Startmenu":ds 12:db 0 ;name
+            db "CP:Shortcuts":ds 12:db 0 ;Name
             db 1                    ;flags (+1=16c icon)
-            dw App_BegData-App_BegCode  ;16 colour icon offset
+            dw prgicn16c-App_BegCode ;16 colour icon offset
             ds 5                    ;*reserved*
-prgmemtab   db "SymExe10"           ;SymbOS-EXE-identifier              POST table reserved memory areas
-            dw 0                    ;additional code memory
-            dw 0                    ;additional data memory
-            dw 0                    ;additional transfer memory
-            ds 26                   ;*reserved*
+prgmemtab   db "SymExe10"           ;SymbOS-EXE-Kennung                 POST Tabelle Speicherbereiche
+            dw 0                    ;zusätzlicher Code-Speicher
+            dw lnklenall            ;zusätzlicher Data-Speicher
+            dw 0                    ;zusätzlicher Transfer-Speicher
+            ds 26                   ;*reserviert*
             db 1,4                  ;required OS version (4.1)
-prgicnsml   db 2,8,8,#00,#00,#00,#46,#00,#8C,#00,#46,#23,#8C,#33,#08,#33,#8C,#00,#00
+prgicnsml   db 2,8,8,#F9,#FF,#DA,#FF,#CB,#F7,#CB,#7B,#CB,#3D,#CB,#7B,#DA,#3D,#F9,#F3
 prgicnbig   db 6,24,24
-            db #87,#0F,#0F,#0F,#0F,#0F,#F7,#FF,#FF,#FF,#FF,#EF,#F7,#F9,#FF,#EF,#00,#6F,#F7,#DA,#FF,#EE,#B4,#67,#F7,#CB,#F7,#EE,#78,#67,#F7,#CB,#7B,#EE,#F0,#67,#F7,#CB,#3D,#EE,#F0,#67,#F7,#CB,#7B,#EF,#00,#6F
-            db #F7,#DA,#3D,#FF,#FF,#EF,#F7,#F9,#B5,#F9,#F4,#E9,#0F,#0F,#FB,#FF,#FF,#EF,#5A,#A5,#FF,#FF,#FF,#EF,#0F,#0F,#0F,#2F,#00,#6F,#6E,#9A,#A5,#A6,#B4,#67,#5D,#CF,#0F,#2E,#78,#67,#0F,#1E,#D2,#A6,#F0,#67
-            db #69,#C3,#0F,#2E,#F0,#67,#0F,#1E,#B4,#A7,#00,#6F,#5A,#C3,#0F,#3F,#FF,#EF,#0F,#0F,#FF,#F9,#F4,#E9,#78,#69,#FF,#FF,#FF,#EF,#0F,#0F,#FF,#FF,#FF,#EF,#69,#A5,#FF,#FF,#FF,#EF,#0F,#0F,#F0,#F0,#F0,#E1
-
+            db #00,#00,#00,#00,#00,#00,#FF,#FF,#FF,#FF,#80,#00,#8F,#0F,#0F,#1F,#80,#00,#8F,#0F,#0F,#1F,#80,#00,#9E,#F0,#87,#1F,#80,#00,#9E,#10,#8F,#1F,#80,#00,#9E,#B0,#9F,#FF,#80,#00,#9E,#E0,#AE,#12,#80,#00
+            db #9E,#73,#BF,#FE,#B0,#00,#9F,#CE,#E2,#7E,#C2,#80,#8F,#4D,#66,#7E,#8D,#80,#8F,#6A,#2A,#7E,#1B,#80,#8F,#EA,#62,#7E,#95,#80,#BF,#CE,#A2,#7E,#42,#E0,#AF,#05,#62,#7E,#85,#14,#BD,#EE,#3A,#F1,#1A,#FE
+            db #BD,#FD,#05,#05,#36,#FE,#BD,#CA,#79,#3A,#82,#F6,#9E,#E7,#F7,#35,#DD,#E0,#F0,#D6,#FF,#39,#FF,#C0,#00,#56,#F9,#FC,#F7,#80,#00,#56,#91,#EC,#73,#80,#00,#30,#10,#EC,#30,#00,#00,#00,#10,#E0,#00,#00
 
 ;*** SYSTEM MANAGER LIBRARY USAGE
 use_SySystem_PRGRUN     equ 0   ;Starts an application or opens a document
@@ -81,7 +78,7 @@ use_SySystem_LNGLOD     equ 1   ;Loads a text pack from a language file
 ;*** DESKTOP MANAGER LIBRARY USAGE
 use_SyDesktop_WINOPN    equ 1   ;Opens a new window
 use_SyDesktop_WINMEN    equ 0   ;Redraws the menu bar of a window
-use_SyDesktop_WININH    equ 0   ;Redraws the content of a window
+use_SyDesktop_WININH    equ 1   ;Redraws the content of a window
 use_SyDesktop_WINTOL    equ 0   ;Redraws the content of the window toolbar
 use_SyDesktop_WINTIT    equ 0   ;Redraws the title bar of a window
 use_SyDesktop_WINSTA    equ 0   ;Redraws the status bar of a window
@@ -90,24 +87,25 @@ use_SyDesktop_WINMVY    equ 0   ;Sets the Y offset of a window content
 use_SyDesktop_WINTOP    equ 1   ;Takes a window to the front position
 use_SyDesktop_WINMAX    equ 0   ;Maximizes a window
 use_SyDesktop_WINMIN    equ 0   ;Minimizes a window
-use_SyDesktop_WINMID    equ 1   ;Restores a window or the size of a window
+use_SyDesktop_WINMID    equ 0   ;Restores a window or the size of a window
 use_SyDesktop_WINMOV    equ 0   ;Moves a window to another position
 use_SyDesktop_WINSIZ    equ 0   ;Resizes a window
 use_SyDesktop_WINCLS    equ 1   ;Closes a window
-use_SyDesktop_WINDIN    equ 1   ;Redraws the content of a window (always)
+use_SyDesktop_WINDIN    equ 0   ;Redraws the content of a window (always)
 use_SyDesktop_WINSLD    equ 0   ;Redraws the two slider of a window
 use_SyDesktop_WINPIN    equ 0   ;Redraws the content of a window (clipped)
 use_SyDesktop_WINSIN    equ 0   ;Redraws the content of a control collection
 use_SyDesktop_MENCTX    equ 0   ;Opens a context menu
 use_SyDesktop_STIADD    equ 0   ;Adds an icon to the systray
 use_SyDesktop_STIREM    equ 0   ;Removes an icon from the systray
-use_SyDesktop_Service   equ 0   ;[REQUIRED FOR THE FOLLOWING FUNCTIONS]
+use_SyDesktop_Service   equ 1   ;[REQUIRED FOR THE FOLLOWING FUNCTIONS]
 use_SyDesktop_MODGET    equ 0   ;Returns the current screen mode
 use_SyDesktop_MODSET    equ 0   ;Sets the current screen 
 use_SyDesktop_COLGET    equ 0   ;Returns the definition of a colours
 use_SyDesktop_COLSET    equ 0   ;Defines one colours
-use_SyDesktop_DSKBGR    equ 0   ;Redraws the desktop background
+use_SyDesktop_DSKBGR    equ 1   ;Redraws the desktop background
 use_SyDesktop_DSKPLT    equ 0   ;Redraws the complete screen
+use_SyDesktop_DSKALL    equ 1   ;Redraws the complete screen
 
 ;*** FILEMANAGER LIBRARY USAGE
 use_SyFile_STOTRN       equ 0   ;Reads or writes a number of sectors
@@ -116,7 +114,7 @@ use_SyFile_FILOPN       equ 1   ;Opens an existing file
 use_SyFile_FILCLO       equ 1   ;Closes an opened file
 use_SyFile_FILINP       equ 1   ;Reads an amount of bytes out of an opened file
 use_SyFile_FILOUT       equ 0   ;Writes an amount of bytes into an opened file
-use_SyFile_FILPOI       equ 0   ;Moves the file pointer to another position
+use_SyFile_FILPOI       equ 1   ;Moves the file pointer to another position
 use_SyFile_FILF2T       equ 0   ;Decodes the file timestamp
 use_SyFile_FILT2F       equ 0   ;Encodes the file timestamp
 use_SyFile_FILLIN       equ 0   ;Reads one text line out of an opened file
@@ -136,9 +134,5 @@ use_SyFile_DEVDIR       equ 0   ;Reads the content of a directory (extended)
 READ "..\..\..\SRC-Main\Docs-Developer\symbos_lib-SystemManager.asm"
 READ "..\..\..\SRC-Main\Docs-Developer\symbos_lib-DesktopManager.asm"
 READ "..\..\..\SRC-Main\Docs-Developer\symbos_lib-FileManager.asm"
-READ "App-CPStartmenu.asm"
 
-App_EndTrns
-
-relocate_table
-relocate_end
+READ "App-CPShortcuts.asm"

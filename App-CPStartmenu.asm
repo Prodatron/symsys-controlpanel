@@ -48,6 +48,7 @@ prgwin  db 0
 ;==============================================================================
 
 prgprz  call prgdbl
+        call prglng
         call stmini
 
         ld de,cfgstmwin
@@ -100,6 +101,32 @@ prgend  ld hl,(App_BegCode+prgpstnum)
 prgend0 rst #30
         jr prgend0
 
+;### PRGLNG -> load language pack
+prglnge db ".exe",0
+
+prglng  ld hl,(App_BegCode)
+        ld de,App_BegCode
+        dec h
+        add hl,de               ;HL=code area end=path
+        push hl
+prglng1 ld a,(hl)
+        inc hl
+        or a
+        jr nz,prglng1
+        ld bc,-11
+        add hl,bc
+        ex de,hl
+        ld hl,prglnge
+        ld bc,5
+        ldir
+        pop de
+        ld a,(App_BnkNum)
+        ld c,a
+        ld hl,texts_int
+        ld ix,256*3+9           ;default language=9 (english), pack=3
+        ld iyl,0                ;language-file version 0
+        jp SySystem_LNGLOD
+
 ;### PRGDBL -> Check, if program is already running
 prgdbln db "CP:Startmenu"
 prgdbl  xor a
@@ -133,6 +160,7 @@ prgwrn  ld a,(App_BnkNum)
 stmdatadr   dw 0    ;startmenu data address
 stmdatbnk   db 0    ;startmenu data bank
 stmreclen   dw 0    ;length of actual menudata records
+stmicnadr   dw 0    ;icon start address +1
 
 stmblknum   db 0    ;current block ID
 stmblkadr   dw 0    ;current block address (behind len+tmp header)
@@ -149,7 +177,7 @@ extprcid    db 0    ;extension module process ID
 
 
 ;### STMINI -> searches for Extension Module and gets data location and startmenu size
-stminin db "SymbOS Advan"
+stminin db "Extended Des"
 stmini  ld e,0
         ld hl,stminin
         ld a,(App_BnkNum)
@@ -161,12 +189,16 @@ stmini  ld e,0
         call stmini0
         db #dd:dec l
         jp nz,prgend
+        ld hl,(App_MsgBuf+6)
+        ld (stmreclen),hl
         ld hl,(App_MsgBuf+2)
         ld (stmdatadr),hl
         ld a,(App_MsgBuf+4)
         ld (stmdatbnk),a
-        ld hl,(App_MsgBuf+6)
-        ld (stmreclen),hl
+        dec hl:dec hl
+        rst #20:dw jmp_bnkrwd
+        inc bc
+        ld (stmicnadr),bc
         ret
 stmini0 ld a,(extprcid)
         ld bc,256*FNC_DXT_STMDAT+MSR_DSK_EXTDSK
@@ -269,12 +301,13 @@ stmlst1 push af
         cp 3
         ld hl,stmentbuf+2
         jr nz,stmlst2
-        ld a,129
+        ld a,027    ;CHR_ARROW_RIGHT
         ld (de),a
         inc de
         inc hl
         dec c
-stmlst2 ldir
+stmlst2 call stmlst7
+        ldir
         inc de
         pop af
         inc a
@@ -295,6 +328,11 @@ stmlst5 sub 1
 stmlst6 add ix,de
         djnz stmlst5
         ld a,c
+        ret
+stmlst7 ld a,(hl)
+        cp 6
+        ret nz
+        inc hl:inc hl:inc hl:inc hl:inc hl:inc hl
         ret
 
 ;### STMEDI -> loads an entry into the editor fields and updates display
@@ -331,6 +369,7 @@ stmedi0 ld e,13
 stmedi1 ld (cfgstmgrp),a
         push af
         ld de,stmbufnmi
+        call stmlst7
         call strcop
         ld ix,stmobjnmi
         call strinp
@@ -421,9 +460,13 @@ stmsav1 res 7,(ix+00+12)
         ld hl,stmbufnmi
         jr z,stmsav2
         ld de,stmentbuf+3
+        or a
+        call stmsav8
         call strcop
         jr stmsav3
 stmsav2 ld de,stmentbuf+2
+        scf
+        call stmsav8
         call strcop
         ld hl,stmbufpti
         call strcop
@@ -469,6 +512,35 @@ stmsav7 ld bc,0
         call stmlen
         or a
         ret
+stmsav8 ld a,(stmpthlen)
+        inc a:dec a
+        ret nz
+        push hl
+        push de
+        ld c,38*2
+        jr c,stmsava            ;file -> use programs  icon
+        ld de,stmsavz           ;check if name is "Favourites"
+        ld bc,256*11+38         ;4*7+10
+stmsav9 ld a,(de)
+        cp (hl)
+        jr nz,stmsava           ;no   -> use folder    icon
+        inc de
+        inc hl
+        djnz stmsav9
+        ld c,b                  ;yes  -> use favourite icon
+stmsava ld b,0
+        ld hl,(stmicnadr)
+        add hl,bc
+        ld (stmsavx+3),hl
+        ld hl,stmsavx
+        pop de
+        ld c,6
+        ldir
+        pop hl
+        ret
+
+stmsavz db "Favourites",0
+stmsavx db 6,128,-1:dw 0:db 32
 
 ;### STMMOV -> moves data at/behind address
 ;### Input      BC=old length, DE=new length, HL=start address; STMLEN has to be called later for finalisation
@@ -512,7 +584,7 @@ stmmov0 ld hl,0
         xor a
         rl b                ;cf=1 -> use ldir, cf=0 use lddr
         rla                 ;a=0 -> use lddr, a=1 use ldir
-        pop bc              ;bc=length
+        pop bc              ;bc=new length
         or a
         jr nz,stmmov1
         add hl,bc
@@ -912,6 +984,7 @@ stmldw  call stmsav
         add hl,bc
         ex de,hl
         ld hl,stmentbuf+3
+        call stmlst7
         call strcop
         ex de,hl
         ld (hl),a
@@ -1071,16 +1144,26 @@ stmdel2 call stmlst             ;update list
         jp prgprz0
 
 ;### STMADM -> add new submenu
-stmadmd db stmadmd0-stmadmd,3,0,"New submenu",0:stmadmd0
+stmadmd db stmadmd0-stmadmd,3,0,                  "New submenu",0:stmadmd0
+stmadme db stmadmd1-stmadme,3,0,6,128,-1:dw 0:db " New submenu",0:stmadmd1
 
 stmadm  ld a,(stmpthlen)        ;too many submenus?
-        cp 7
+        cp 5-1
         ld hl,errsubobj
         jp nc,prgwrn
+        ld ixl,a
         call stmnum             ;too many entries?
         jp c,prgwrn
+        ld a,ixl
+        or a
         ld de,5+stmadmd0-stmadmd
-        call stmmem             ;memory full?
+        jr nz,stmadm2
+        ld de,5+stmadmd0-stmadmd+6
+        ld hl,(stmicnadr)
+        ld de,38
+        add hl,de
+        ld (stmadme+6),hl
+stmadm2 call stmmem             ;memory full?
         jp c,prgwrn
         ld de,8+2+8
         call stmrec             ;too much record data?
@@ -1099,6 +1182,7 @@ stmadm1 inc e                   ;search for last block
         dec hl:dec hl
         ld a,e
         ld (stmadmd+2),a        ;store block ID in new entry record
+        ld (stmadme+2),a
         ld bc,0
         ld de,5
         push hl
@@ -1112,8 +1196,12 @@ stmadm1 inc e                   ;search for last block
         rst #20:dw jmp_bnkwbt
         ld hl,(stmdatadr)
         call stmlen1            ;update total startmenu length
+        ld a,(stmpthlen)
+        or a
         ld iy,stmadmd
-        call stmads0
+        jr nz,stmadm3
+        ld iy,stmadme
+stmadm3 call stmads0
         jp prgprz0
 
 ;### STMADS -> add new shortcut
@@ -1388,52 +1476,31 @@ max_entdir  equ 100     ;maximum of 48 chars per entry start in (including 0-ter
 
 stmlsttxt   ds 24*32    ;list text (24entries, 32chars max/entry)
 
-stmtxttit   db "Startmenu Editor",0
-stmtxtcls   db "Close",0
-stmtxtlcd   db "Current location:",0
-
 stmtxtlct   db "/Start/",0:ds 256-8
 
 stmtxtlup   db "<<",0
 stmtxtent   db ">>",0
-stmtxtltr   db "Tree",0
-stmtxtasc   db "Add shortcut",0
-stmtxtasm   db "Add submenu",0
-stmtxtdel   db "Delete",0
-stmtxtmup   db "Entry up",0
-stmtxtmdw   db "Entry down",0
-stmtxtedi   db "Edit entry",0
-stmtxtnms   db "[entry is read only]",0
-stmtxtnmd   db "Name",0
-stmtxtptd   db "Target",0
-stmtxtbrw   db "Browse",0
-stmtxtstd   db "Start in",0
-stmtxtrnd   db "Run",0
-stmtxtrfs   db "Refresh",0
 
-stmbufnmi   ds 50
-stmbufpti   ds 110
-stmbufsti   ds 90
+stmbufnmi   ds 50   ;name
+stmbufpti   ds 110  ;path
+stmbufsti   ds 90   ;start in
 
-stmtxtrun0  db "Default",0
-stmtxtrun1  db "Normal window",0
-stmtxtrun2  db "Minimized",0
-stmtxtrun3  db "Maximized",0
 
 filselbuf   db "*  ",0
             ds 256-4
 
-errmemtxt1  db "Memory full!",0
-errmemtxt2  db "There is no memory left for",0
-errmemtxt3  db "completing this operation.",0
 
-errnumtxt1  db "Too many entries! The maximum",0
-errnumtxt2  db "amount of entries (24) for this",0
-errnumtxt3  db "submenu has been reached.",0
+;==============================================================================
+;%%% MULTI LANGUAGE TEXTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;==============================================================================
 
-errsubtxt1  db "Too many nested submenus!",0
-errsubtxt2  db "The deepest level for a",0
-errsubtxt3  db "submenu is 8.",0
+texts_int
+read"App-CPStartmenu-texts.asm"
+texts_int_end
+
+list
+texts_int_len   equ texts_int_end-texts_int
+nolist
 
 
 ;==============================================================================
@@ -1483,7 +1550,7 @@ dw 00,     255*256+1, stmobjnms,   8,113,190,  8,0      ;14=Beschreibung "read o
 
 dw 00,     255*256+1, stmobjnmd,   8,113, 22,  8,0      ;15=Beschreibung  Name
 dw 00,     255*256+32,stmobjnmi,  42,111,170, 12,0      ;16=Input         Name
-dw stmrfs, 255*256+16,stmtxtrfs, 164,153, 48, 12,0      ;17=Button "Refresh"
+dw stmrfs, 255*256+16,stmtxtrfs, 144,153, 68, 12,0      ;17=Button "Refresh"
 dw 00,     255*256+1, stmobjptd,   8,127, 22,  8,0      ;18=Beschreibung  Target
 dw 00,     255*256+32,stmobjpti,  42,125,128, 12,0      ;19=Input         Target
 dw stmbrp, 255*256+16,stmtxtbrw, 172,125, 40, 12,0      ;20=Button Browse Target

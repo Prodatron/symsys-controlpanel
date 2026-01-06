@@ -1,0 +1,323 @@
+labels,ENG,JPN,DEU,NLD,ELL
+### pack0,127,1858
+prgerrlod,Error while loading.,ロードちゅうにエラーがはっせいしました。,Fehler beim Laden.,Fout bij laden.,Σφάλμα κατά τη φόρτωση.
+prgwintit,Control Panel,コントロールパネル,Systemsteuerung,Configuratiescherm,Πίνακας Ελέγχου
+prgwinsta,8 Object(s),８オブジェクト,8 Element(e),8 objecten,8 Αντικείμενα
+prgwinmentx1,File,ファイル,Datei,Bestand,Αρχείο
+prgwinmentx2,?,？,?,?,?
+prgwinmen1tx1,Load settings,せっていをロード,Laden,Instellingen laden,Φόρτωση ρυθμίσεων
+prgwinmen1tx2,Save settings,せっていをセーブ,Speichern,Instellingen opslaan,Αποθήκευση ρυθμίσεων
+prgwinmen1tx3,Autosave,オートセーブ,Autom.speichern,Auto-opslag,Αυτόματη αποθήκευση
+prgwinmen1tx4,Close,とじる,Beenden,Sluiten,Κλείσιμο
+prgwinmen2tx1,Helptopics,ヘルプトピック,Hilfethemen,Help,Θέματα βοήθειας
+prgwinmen2tx2,Info,じょうほう,Info,Info,Πληροφορίες
+prgicnkey1a,Keyboard,キーホﾞートﾞ,Tastatur,Toetsen-,Πληκτρο-
+prgicnkey1b,,,,bord,λόγιο
+prgicnmou2a,Mouse,マウス,Maus,Muis,Ποντίκι
+prgicnmou2b,,,,,
+prgicndsp3a,Display,テﾞィスフﾟレイ,Anzeige,Weergave,Οθόνη
+prgicndsp3b,,,,,
+prgicntim4a,Date and,日時,Datum &,Datum en,Ημερομ.
+prgicntim4b,Time,,Uhrzeit,Tijd,και Ώρα
+prgicnfnt5a,Font and,フォント and,Schriftart,Lettertype,Γραμ 
+prgicnfnt5b,Language,#TRANSLATE#,& Sprache,en taal,και Γλώσσα
+prgicnsys6a,System,システム,System,Systeem,Σύστημα
+prgicnsys6b,,,,,
+prgicndev7a,Mass,マス,Massen-,Opslag,Μαζική
+prgicndev7b,Storage,ストレーシﾞ,speicher,Bronnen,Αποθ.
+prgicnlnk8a,Desktop,デスクトップ,Verknüpfungen,Bureaublad,Συντομεύσεις
+prgicnlnk8b,Shortcuts,リンク,,Snelkoppelingen,
+prgicnlnk8c,Startmenu,スタートメニュー,Startmenü,Startmenu,Μενού
+prgtitkey,Keyboard,キーホﾞートﾞ,Tastatur,Toetsenbord,Πληκτρολόγιο
+prgtitmou,Mouse,マウス,Maus,Muis,Ποντίκι
+prgtitfnt,Font and Language,フォント,Schriftart und Sprache,Lettertype en taal,Γραμματοσειρά και Γλώσσα
+prgtitsys,System,システム,System,Systeem,Σύστημα
+prgtitlnk,Desktop and Startmenu Links,デスクトップとスタートメニューのリンク,Verknüpfungen,Bureaublad en Startmenu,Συντομεύσεις
+prgbuttxt1,Ok,OK,Ok,OK,ΟΚ
+prgbuttxt2,Cancel,キャンセル,Abbruch,Annuleer,Άκυρο
+prgbuttxt3,Apply,てきよう,Überneh.,Bevestig,Εφαρμ.
+prgbuttxt4,Load,ロード,Laden,Laden,Φόρτ.
+prgbuttxt5,Save,セーブ,Speichern,Opslaan,Αποθ.
+prgtitdev,Mass Storage Devices,マスストレージデバイス,Massenspeicher,Opslagapparaten,Συσκ. Αποθ. 
+prgtxtdev1,Drives,ドライブ,Laufwerke,Stations,Μονάδες
+prgtxtdev2,Settings,せってい,Einstellungen,Instellingen,Ρυθμίσεις
+prgtxtdev3,Del,-,-,-,Διαγραφή
+prgtxtdev4,Add,+,+,+,Προσθήκη
+prgtxtdev5,Name,なまえ,Name,Naam,Όνομα
+prgtxtdev6,Floppy disk,フロッピーディスク,Diskette,Diskette,Δισκέτα
+prgtxtdev7,IDE device,IDEデバイス,IDE Gerät,IDE-apparaat,Συσκευή IDE
+prgtxtdeva,SD/MMC card reader,SD／MMCカードリーダー,SD/MMC Leser,SD/MMC-lezer,SD/MMC reader
+prgtxtdevb,SCSI/USB device,SCSI／USBデバイス,SCSI/USB Gerät,SCSI/USB-apparaat,Συσκευή SCSI/USB
+prgtxtdev8,Removeable medium,リムーバブルメディア,Wechseldatenträger,Verwisselbaar medium,Αφαιρούμενο μέσο
+prgtxtdev9,Specifics,くわしく,Spezifisch,Details,Λεπτομέρειες
+prgtxtdeve,Drive letter,ドライブレター,Laufwerkbuchs.,Stationletter.,Γράμμα μονάδας
+prgtxtdevf,Double step,ダブルステップ,Doppelschritt,Dubbele stap,Διπλό βήμα
+prgtabdevba,Master,マスター,Master,Master,Κύρια
+prgtabdevbb,Slave,スレーブ,Slave,Slave,Δευτερεύουσα
+prgtabdevca,Slot 1,スロット１,Slot 1,Slot 1,Θέση 1
+prgtabdevcb,Slot 2,スロット２,Slot 2,Slot 2,Θέση 2
+prgtabdevda,Device 0,デバイス０,Gerät 0,Appar.0,Συσκ. 0
+prgtabdevdb,Device 1,デバイス１,Gerät 1,Appar.1,Συσκ. 1
+prgtabdevdc,Device 2,デバイス２,Gerät 2,Appar.2,Συσκ. 2
+prgtabdevdd,Device 3,デバイス３,Gerät 3,Appar.3,Συσκ. 3
+prgtabdevde,Device 4,デバイス４,Gerät 4,Appar.4,Συσκ. 4
+prgtabdevdf,Device 5,デバイス５,Gerät 5,Appar.5,Συσκ. 5
+prgtabdevdg,Device 6,デバイス６,Gerät 6,Appar.6,Συσκ. 6
+prgtabdevdh,Device 7,デバイス７,Gerät 7,Appar.7,Συσκ. 7
+prgtabdevxa,Head 0,ヘッド０,Kopf 0,Kop 0,Κεφαλή 0
+prgtabdevxb,Head 1,ヘッド１,Kopf 1,Kop 1,Κεφαλή 1
+prgtabdevya,Not partitioned,パーティションなし,Nicht partitioniert,Geen partitie,Χωρίς διαμέριση
+prgtabdevyb,Primary partition 1,プライマリーパーティション１,Prim.Partition 1,Partition 1,διαμέρισμα 1
+prgtabdevyc,Primary partition 2,プライマリーパーティション２,Prim.Partition 2,Partition 2,διαμέρισμα 2
+prgtabdevyd,Primary partition 3,プライマリーパーティション３,Prim.Partition 3,Partition 3,διαμέρισμα 3
+prgtabdevye,Primary partition 4,プライマリーパーティション４,Prim.Partition 4,Partition 4,διαμέρισμα 4
+keyobjtxt1,Definitions,ていぎ,Belegung,Definities,Ορισμοί
+keyobjtxt2,Speed,スピード,Geschwindigkeit,Snelheid,Ταχύτητα
+keyobjtxt3,Buttons,ボタン,Taste,Knoppen,Κουμπιά
+keyobjtxta,Key,キー,Taste,Toets,Πλήκτρο
+keyobjtxtb,Normal,ノーマル,Normal,Norm.,Κανονικό
+keyobjtxtc,Shift,シフト,Umsch.,Shift,Shift
+keyobjtxtd,Control,コントロ,Strg,Ctrl,Control
+keyobjtxte,Alt,Alt,Alt,Alt,Alt
+keyobjtxtk,Delay,ディレイ,Verzög.,Vertrg.,Καθυστέρηση
+keyobjtxtl,Repeat,リピート,Wdh.rate,Herhaal,Επανάληψη
+keyobjtxtm,Test,テスト,Test,Test,Δοκιμή
+mouobjtxt1,Joystick Settings,ジョイスティックせってい,Joystick,Joystickinstellingen,Ρυθμίσεις Joystick
+mouobjtxt2,Mouse Settings,マウスせってい,Maus,Muisinstellingen,Ρυθμίσεις Ποντικιού
+mouobjtxt3,Button Settings,ボタンせってい,Maustasten,Knopinstellingen,Ρυθμίσεις Κουμπιών
+mouobjtxta,Acceler.,アクセル,Beschleu.,Versnl.,Επιτάχυνση
+mouobjtxtb,Speed,スピード,Geschwn.,Snelheid,Ταχύτητα
+mouobjtxti,Swap left/right button,ひだりみぎボタンをこうかん,Links/rechts tauschen,Knoppen wisselen,Αντιστρ. Αρ./Δεξ.
+mouobjtxtj,DoublClick,ダブクリ,Doppelkl.,Dubbelkl.,Διπλό κλικ
+mouobjtxtm,Wheel,ホイール,Rad,Wiel,Τροχός
+prgtxtsys0a,General,いっぱん,Allgemein,Algemeen,Γενικά
+prgtxtsys0b,File types,ファイルタイプ,Dateizuordnungen,Bestandstypen,Τύποι αρχείων
+prgtxtsys1,System info,システムじょうほう,Systeminfo,Systeeminfo,Πληροφορίες συστήματος
+prgtxtsys1a,Platform,プラットフォーム,Plattform,Platform,Πλατφόρμα
+prgtxtsys1b,CPU Memory,CPUメモリ,Speicher,CPU-geheugen,Μνήμη CPU
+prgtxtsys1d,OS Version,OSバージョン,OS Version,OS-versie,Έκδοση Λειτουργικού
+prgtxtsys2f,[Unknown],[アンノウン],[Unbekannt],[Onbekend],[Άγνωστο]
+prgtxtsys3,Miscellaneous,そのた,Allgemein,Diversen,Διάφορα
+prgtxtsys3a,System path,システムパス,Systempfad,Systeempad,Διαδρ. συστ.
+prgtxtsys3d,(these options require a reboot),（リブートがひつようです）,(Optionen erfordern Neustart),(vereist herstart),(απαιτ. επανεκκ.)
+prgtxtsys3b,Boot Extended Desktop,エクステンデッドデスクトップ,lade Extended Desktop,Gebruik Extended Desktop,Εκκίν. εκτ. επιφ.
+prgtxtsys3j,File browser uses max memory,ブラウザのさいだいメモリ,max.Speicher für Dateibrowser,max.bestandsbrowsergeheugen,Διαχ. αρχ. μέγ. μνήμ.
+prgtxtsys3k,Show alternative Startbutton,べつのスタートボタンをひょうじ,alternativer Startknopf,Alternatieve Startknop tonen,Εμφ. εναλ. κουμπ. Έναρ.
+prgtxtsys3e,Autoexec,Autoexec,Autoexec,Autoexec,Autoexec
+prgtxtsys3h,Boot drive,ブートドライブ,Bootlaufwerk,Opstartstation,Μον. εκκ.
+prgtxtlnk9a,Extension(s),エクステンション,Dateiendung(en),Extensie(s),Επεκτ.
+prgtxtlnk9b,Application path,アプリケーションパス,Öffnen mit,Applicatiepad,Διαδρ. εφαρμ.
+prgtxtlnk4,Edit entry,エントリをへんしゅう,Bearbeiten,Bewerken,Επεξ. καταχ.
+prgtxtlnk5c,Browse...,せんたく...,Wählen...,Bladeren,Αναζήτ...
+_prgtxtfnt0a,Appearance (,フォントのみため (,Ansicht (,Weergave (,Εμφάνιση (
+prgtxtfnt1f,xxx characters) ,xxx characters) ,xxx Zeichen) ,xxx tekens),xxx χαρ.)
+prgtxtfnt0b,Load new font,あたらしいフォントをロード,Schriftart laden,Nieuw lettertype laden,Νέα γραμ/ρά
+prgtxtfnt3a,Use enhanced 255 characters font,かくちょう２５５もじフォントをしよう,auf 255 Zeichen erweitern,Verbeterd 255-tekens lettertype,Ενισχ. 255 χαρ.
+prgtxtfnt1e,The five boxing wizards jump quickly.,(Japanese characters not previewable),Franz jagt im komplett verwahrlosten Taxi quer durch Bayern.,Op brute wijze ving de schooljuf de quasi-kalme lynx.,(Greek characters not previewable)
+prgtxtfntta,Font,フォント,Schriftart,Lettertype,Γραμ/ρά
+prgtxtfnttb,Language,#TRANSLATE#,Sprache,Taal,Γλώσσα
+prgtxtlng3a,Primary,#TRANSLATE#,Primär,Primair,Κύρια
+prgtxtlng3b,Fallback,#TRANSLATE#,Ersatz,Fallback,Εφεδρ.
+prgtxtlng1a,Language packages,#TRANSLATE#,Sprachpakete,Taalpakketten,Πακέτα γλώσ.
+prgobjlng3d_df,[default],#TRANSLATE#,[standard],[standaard],[προεπ.]
+prgobjlng3d_sd,[self-defined],#TRANSLATE#,[definiert],[eigen],[ορισμ. χρήστ.]
+prgtxtfnt5a,Enhanced keyboard layouts,#TRANSLATE#,Erweiterter Tastatur-Modus,Toetsenbordmodus,Ενισχ. διατ. πλήκτρ.
+prgtxtlng5b,Activate,#TRANSLATE#,Aktivieren,#TRANSLATE#,Ενεργ.
+prgtxtlng5d,Show layout icon,#TRANSLATE#,Zeige Symbol,#TRANSLATE#,Εικον. διάταξης
+prgerrfnt1,Selected keyboard is not,#TRANSLATE#,Tastaturlayout passt nicht zum,#TRANSLATE#,Το πλήκτρ. δεν είναι
+prgerrfnt2,compatible with the writing system.,#TRANSLATE#,Schriftsystem. Bitte Zeichensatz,#TRANSLATE#,συμβατό με το σύστ. γραφής.
+prgerrfnt3,Please adjust font or keyboard.,#TRANSLATE#,oder Tastatur anpassen.,#TRANSLATE#,Ρύθμ. γραμ/ρά ή πλήκτρ.
+### pack1,78,1131
+prgtitdsp,Display,ディスプレイ,Anzeige,Beeldscherm,Οθόνη
+prgtitcol,Palette,パレット,Palette,Palet,Παλέτα
+prgbuttxt1,Ok,OK,Ok,OK,ΟΚ
+prgbuttxt2,Cancel,キャンセル,Abbruch,Annuleer,Άκυρο
+prgbuttxt3,Apply,てきよう,Überneh.,Bevestig,Εφαρμ.
+prgbuttxt4,Load,ロード,Laden,Laden,Φόρτ.
+prgbuttxt5,Save,セーブ,Spei.,Opsl.,Αποθ.
+prgbuttxt6,Define...,ていぎ...,Setzen...,Definieer...,Ορισμ...
+prgbuttxt7,Taskbar...,タスクバー...,Taskbar,Taakbalk...,Γραμ. εργασ...
+dsptabtxt1,Deskt.,デスク,Desk.,Bureaublad,Γραφ.
+dsptabtxt2,Saver,セーバー,Bildschon.,Saver,Φύλακας
+dsptabtxt3,Colours,カラー,Farben,Kleuren,Χρώματα
+dsptabtxt4,Modi,モード,Modus,Modi,Λειτ.
+dspobjtxtb,Background,バックグラウンド,Hintergrund,Achtergrond,Φόντο
+dspobjtxtd,Browse...,せんたく...,Wählen...,Bladeren...,Αναζήτ...
+dspobjtxtf,Setup,セット,Setup,Instel.,Ρύθμιση
+dspobjtxtg,Screensaver,スクリーンセーバー,Bildschirmschoner,Screensaver,Φύλακας οθ.
+dspobjtxth,Wait,ウェイト,Zeit,Na,Αναμονή
+dspobjtxti,min,分,min,min,λεπ
+dspobjtxtj,Test,テスト,Test,Test,Δοκιμή
+dspobjtxt2,Elements,エレメント,Elemente,Elementen,Στοιχεία
+dspobjtxtk,Definition,ていぎ,Definition,Definitie,Ορισμός
+dspobjtxt3,Palette,パレット,Palette,Palet,Παλέτα
+dspobjtxt7,Roll,ロール,Roll.,Rol,Κύλιση
+dspobjtxt8,Flip,フリップ,Wcs.,Flip,Αναστρ.
+dspobjtxt9,Bright,ブライト,Hell.,Licht,Φωτειν.
+dspobjtxta,Dark,ダーク,Dunk.,Donk.,Σκοτειν.
+dspobjtxt1,Screenmodi,スクリーンモード,Auflösung,Schermmodi,Λειτ. οθόνης
+dspobjtxm0,720 x 256 (2 colours),７２０x２５６（２カラー）,720 x 256 (2 Farben),720x256 (2 kleuren),720x256 (2 χρ.)
+dspobjtxm1,320 x 200 (4 colours),３２０x２００（４カラー）,320 x 200 (4 Farben),320x200 (4 kleuren),320 x 200 (4 χρ.)
+dspobjtxm2,640 x 200 (2 colours),６４０x２００（２カラー）,640 x 200 (2 Farben),640x200 (2 kleuren),640 x 200 (2 χρ.)
+dspobjtxm5,256 x 212 (16 colours),２５６x２１２（１６カラー）,256 x 212 (16 Farben),256x212 (16 kleuren),256 x 212 (16 χρ.)
+dspobjtxm6,512 x 212 (4 colours),５１２x２１２（４カラー）,512 x 212 (4 Farben),512x212 (4 kleuren),512 x 212 (4 χρ.)
+dspobjtxm7,512 x 212 (16 colours),５１２x２１２（１６カラー）,512 x 212 (16 Farben),512x212 (16 kleuren),512 x 212 (16 χρ.)
+dspobjtxm14,480 x 128 (2 colours),４８０x１２８（２カラー）4,480 x 128 (2 Farben),480x128 (2 kleuren),480 x 128 (2 χρ.)
+dspobjtxm15,480 x 256 (2 colours),４８０x２５６（２カラー）5,480 x 256 (2 Farben),480x256 (2 kleuren),480 x 256 (2 χρ.)
+dspobjtxm20,640 x 226 (16 colours),６４０x２２６（１６カラー）0,640 x 226 (16 Farben),640x226 (16 kleuren),640 x 226 (16 χρ.)
+dspobjtxm21,640 x 256 (16 colours),６４０x２５６（１６カラー）1,640 x 256 (16 Farben),640x256 (16 kleuren),640 x 256 (16 χρ.)
+dspobjtxm31,640 x 400 (16 colours),６４０x４００（１６カラー）1,640 x 400 (16 Farben),640x400 (16 kleuren),640 x 400 (16 χρ.)
+dspobjtxm30,320x240 (legacy),３２０x２４０（レガシー）,320x240 (Retro),320x240 (legacy),320x240 (legacy)
+dspobjtxm8,Low,ロー,Niedr.,Laag,Χαμ.
+dspobjtxm9,High,ハイ,Höher,Hoog,Υψηλ.
+dspobjtxma,384x240x16 (normal),３８４x２４０x１６（ノーマル）,384x240x16,384x240x16 (Edo mode),384x240x16 (κανον.)
+dspobjtxmb,384x240x16 (512 virtual),３８４x２４０x１６（５１２ バーチャル）,384x240x16 (512 virtuell),384x240x16 (512 virt.),384x240x16 (512 εικ.)
+dspobjtxmc,384x240x16 (1000 virtual),３８４x２４０x１６（１０００ バーチャル）,384x240x16 (1000 virtuell),384x240x16 (1000 virt.),384x240x16 (1000 εικ.)
+dspobjtxmd,512x212x16 (normal),５１２x２１２x１６（ノーマル）,512x212x16,512x212x16 (normaal),512x212x16 (κανον.)
+dspobjtxme,512x212x16 (1000 virtual),５１２x２１２x１６（１０００ バーチャル）,512x212x16 (1000 virtuell),512x212x16 (1000 virt.),512x212x16 (1000 εικ.)
+dspobjtxmf,768x240x16 (normal),７６８x２４０x１６（ノーマル）,768x240x16,768x240x16 (normaal),768x240x16 (κανον.)
+dspobjtxmg,768x240x16 (1000 virtual),７６８x２４０x１６（１０００ バーチャル）,768x240x16 (1000 virtuell),768x240x16 (1000 virt.),768x240x16 (1000 εικ.)
+dspobjtxmh,1024x212x16 (normal),１０２４x２１２x１６（ノーマル）,1024x212x16,1024x212x16 (normaal),1024x212x16 (κανον.)
+dspobjtxtrx,Frame 1,フレーム1,Rahmen 1,Frame 1,Πλαισ. 1
+dspobjtxtrx1,Frame 2,フレーム2,Rahmen 2,Frame 2,Πλαισ. 2
+dspobjtxtrx2,Backgr.,バック,Hintergr.,Achtergr.,Φόντο
+dspobjtxtrx3,Text,テキスト,Text,Tekst,Κείμενο
+dspobjtxtry,Colour 1,カラー1,Farbe 1,Kleur 1,Χρώμα 1
+dspobjtxtry1,Colour 2,カラー2,Farbe 2,Kleur 2 ,Χρώμα 2
+dspobjtxtry2,Colour 3,カラー3,Farbe 3,Kleur 3,Χρώμα 3
+dspobjtxtry3,Colour 4,カラー4,Farbe 4,Kleur 4,Χρώμα 4
+dspobjtxtrz,Bar,バー,Leiste,Balk,Μπάρα
+_dspobjtxtr1,-,-,-,-,-
+_dspobjtxtr2,-,-,-,-,-
+_dspobjtxtr3,-,-,-,-,-
+_dspobjtxtr4,-,-,-,-,-
+dspobjtxtr5,Invert,はんてん,Invers,Omkeren,Αντιστροφή
+dspobjtxtr6,Preview,プレビュー,Vorschau,Voorbeeld,Προεπ.
+dspobjtxts1,Title,タイトル,Titel,Titel,Τίτλος
+dspobjtxts2,Status,ステータス,Status,Status,Κατάστ.
+dspobjtxts3,Slider,スライダー,Balken,Schuif,Δείκτης
+dspobjtxts4,Menu (1),メニュー（１）,Menu (1),Menu (1),Μενού (1)
+dspobjtxts5,Menu (2),メニュー（２）,Menu (1),Menu (2),Μενού (2)
+dspobjtxts6,Taskbar,タスクバー,Taskbar,Taakbalk,Γρ. εργασ.
+dspobjtxts7,Icons,アイコン,Icons,Iconen,Εικονίδ.
+dspobjtxts8,Content,コンテンツ,Inhalt,Inhoud,Περιεχ.
+dspobjtxts9,Symbols,シンボル,Symbole,Symbolen,Σύμβολα
+dspobjtxtsa,Startlogo,スタートロゴ,Startlogo,Startlogo,Λογότυπ.
+prgmsgpth1,Path too long.,パスがながすぎます。,Pfad zu lang.,Pad te lang,Διαδρ. πολύ μ/λη.
+prgmsgpth2,The length of the full path,フルパスのながさは,Der Pfad darf nicht länger,Volledig pad,Η πλήρης διαδρ.
+prgmsgpth3,shouldn't exceed 32 chars.,３２もじをこえてはいけません。,als 32 Zeichen sein.,max 32 tekens,<=32 χαρ.
+### pack2,19,211
+prgtitlnk,Desktop and Startmenu Links,デスクトップとスタートメニューのリンク,Verknüpfungen,Snelkoppelingen,Συντομεύσεις
+prgbuttxt1,Ok,OK,Ok,OK,ΟΚ
+prgbuttxt2,Cancel,キャンセル,Abbruch,Annuleer,Άκυρο
+prgbuttxt3,Apply,てきよう,Überneh.,Bevestig,Εφαρμ.
+prgtxtlnk2a,Desktop,デスクトップ,Desktop,Bureaublad,Γραφείο
+prgtxtlnk2b,Startmenu,スタートメニュー,Startmenu,Startmenu,Έναρξη
+prgtxtlnk3a,Up,うえ,Auf,Op,Πάνω
+prgtxtlnk3b,Down,した,Ab,Neer,Κάτω
+prgtxtlnk3c,Del,-,-,-,Διαγρ.
+prgtxtlnk3d,Add,+,+,+,Προσθ.
+prgtxtlnk4,Edit entry,エントリをへんしゅう,Bearbeiten,Bewerken,Επεξ. καταχ.
+prgtxtlnk5a,Path,パス,Pfad,Pad,Διαδρομή
+prgtxtlnk5c,Browse...,せんたく...,Wählen...,Bladeren,Αναζήτ...
+prgtxtlnk6a,Name,なまえ,Name,Naam,Όνομα
+prgtxtlnk7a,Icon,アイコン,Icon,Icoon,Εικον.
+prgtxtlnk7b,Use file icon,ファイルアイコンをしよう,Von Datei nehmen,Uit bestand halen,Εικον. αρχείου
+prgtxtlnk7c,Select icon...,アイコンをせんたく...,Icon wählen...,Icoon kiezen...,Επιλ. εικον...
+prgtxtlnk8a,XPos,Xざひょう,XPos,Xpos,X
+prgtxtlnk8b,YPos,Yざひょう,YPos,Ypos,Y
+### pack3,30,523
+stmtxttit,Startmenu Editor,スタートメニューエディター,Startmenu Editor,Startmenu-editor,Επεξ. Μενού Έναρξης
+stmtxtcls,Close,とじる,Schließen,Sluiten,Κλείσιμο
+stmtxtlcd,Current location:,カレントロケーション：,Ort:,Huidige locatie:,Τρέχ. θέση:
+stmtxtltr,Tree,ツリー,Baum,Boom,Δέντρο
+stmtxtasc,Add shortcut,リンクをついか,Neue Verkn.,Nieuwe snelk.,Προσθ. συντ.
+stmtxtasm,Add submenu,メニューをついか,Neues Menü,Nieuw menu,Προσθ. υπομ.
+stmtxtdel,Delete,けす,Löschen,Verwijderen,Διαγρ.
+stmtxtmup,Entry up,エントリをうえへ,Eintrag auf,Omhoog,Πάνω
+stmtxtmdw,Entry down,エントリをしたへ,Eintrag ab,Omlaag,Κάτω
+stmtxtedi,Edit entry,エントリをへんしゅう,Bearbeiten,Bewerken,Επεξ. καταχ.
+stmtxtnms,[entry is read only],［エントリはよみとりせんようです］,[schreibgeschützt],[alleen-lezen],[μόνο ανάν.]
+stmtxtnmd,Name,なまえ,Name,Naam,Όνομα
+stmtxtptd,Target,ターゲット,Ziel,Doel,Στόχος
+stmtxtbrw,Browse,せんたく,Wählen,Blader.,Αναζήτ.
+stmtxtstd,Start in,スタート,Läuft in,Start in,Έναρξη σε
+stmtxtrnd,Run,じっこう,Fenster,Venster,Εκτ.
+stmtxtrfs,Refresh,リフレッシュ,Aktualisieren,Vernieuwen,Ανανέωση
+stmtxtrun0,Default,デフォルト,Standard,Standaard,Προεπ.
+stmtxtrun1,Normal window,ノーマルウィンドウ,Normal,Normaal,Κανονικό
+stmtxtrun2,Minimized,さいしょう,Minimiert,Geminimaliseerd,Ελαχ.
+stmtxtrun3,Maximized,さいだい,Maximiert,Gemaximaliseerd,Μεγ.
+errmemtxt1,Memory full!,メモリがいっぱいです。,Speicher voll!,Geheugen vol!,Γέμισε μνήμη!
+errmemtxt2,There is no memory left for,このそうさをかんりょうするための,Operation kann nicht,Onvoldoende geheugen,Δεν υπάρχει μνήμη
+errmemtxt3,completing this operation.,メモリがのこっていません。,ausgeführt werden.,voor deze actie.,για την ενέργεια.
+errnumtxt1,Too many entries! The maximum,エントリがおおすぎます。,Zu viele Einträge! Pro,Te veel items!,Πολλές καταχ.!
+errnumtxt2,amount of entries (24) for this,このサブメニューのさいだいすう,Untermenü sind bis zu,Aantal items (24) is bereikt,Μέγ. 24 στο
+errnumtxt3,submenu has been reached.,（２４）にたっしました。,24 Einträge möglich.,voor dit submenu.,υπομενού.
+errsubtxt1,Too many nested submenus!,サブメニューのかさねすぎです。,Zuviele Untermenüs!,Te veel submenu's!,Πολύ βαθιά υπομενού!
+errsubtxt2,The deepest level for a,サブメニューのさいしんそうは,Das Maximum von 5 wurde,Het maximaal aantal items voor,Μέγ. βάθος 5.
+errsubtxt3,submenu is 5.,５です。,überschritten.,submenu's is 5.,
+### pack4,63,854
+prgbuttxt1,Ok,OK,Ok,OK,ΟΚ
+prgbuttxt2,Cancel,キャンセル,Abbruch,Annuleer,Άκυρο
+prgbuttxt3,Apply,てきよう,Übern.,Bevestig,Εφαρμ.
+prgtittim,Date and Time,日時,Datum und Uhrzeit,Datum en tijd,Ημ/Ώρα
+timtabtxt1,Time,時かん,Uhrzeit,Tijd,Ώρα
+timtabtxt2,Date,日づけ,Datum,Datum,Ημ/νία
+timtabtxt3,Zone,タイムゾーン,Zone,Zone,Ζώνη
+timdattxw0,W,W,W,W,ε 
+timdattxw1,M,月,M,M,Δ
+timdattxw2,T,火,D,D,Τ
+timdattxw3,W,水,M,W,Τ
+timdattxw4,T,木,D,D,Π
+timdattxw5,F,金,F,V,Π
+timdattxw6,S,土,S,Z,Σ
+timdattxw7,S,日,S,Z,Κ
+timtxtchr,Hour,時,Stu.,Uur,Ώρα
+timtxtcmn,Min.,分,Min.,Min.,Λεπ.
+timtxtcsc,Sec.,秒,Sek.,Sec.,Δευτ.
+timdatmt01,January,１月,Januar,Januari,Ιανουάριος
+timdatmt02,February,２月,Februar,Februari,Φεβρουάριος
+timdatmt03,March,３月,März,Maart,Μάρτιος
+timdatmt04,April,４月,April,April,Απρίλιος
+timdatmt05,May,５月,Mai,Mei,Μάιος
+timdatmt06,June,６月,Juni,Juni,Ιούνιος
+timdatmt07,July,７月,Juli,Juli,Ιούλιος
+timdatmt08,August,８月,August,Augustus,Αύγουστος
+timdatmt09,September,９月,September,September,Σεπτέμβριος
+timdatmt10,October,１０月,Oktober,Oktober,Οκτώβριος
+timdatmt11,November,１１月,November,November,Νοέμβριος
+timdatmt12,December,１２月,Dezember,December,Δεκέμβριος 
+timdatdt0,Monday,月ようび,Montag,Maandag,Δευτέρα
+timdatdt1,Tuesday,火ようび,Dienstag,Dinsdag,Τρίτη
+timdatdt2,Wednesday,水ようび,Mittwoch,Woensdag,Τετάρτη
+timdatdt3,Thursday,木ようび,Donnerstag,Donderdag,Πέμπτη
+timdatdt4,Friday,金ようび,Freitag,Vrijdag,Παρασκευή
+timdatdt5,Saturday,土ようび,Samstag,Zaterdag,Σάββατο
+timdatdt6,Sunday,日ようび,Sonntag,Zondag,Κυριακή 
+timzontxta,-12 Int.Dateline,-１２ デートライン,-12 Int.Datumsgrenze,-12 Intern. datumlijn,-12 Γρ. Ημερ.
+timzontxtb,-11 Midway Island,-１１ ミッドウェーとう,-11 Midwayinseln,-11 Midway,-11 Μίντγουεϊ
+timzontxtc,-10 Hawaii,-１０ ハワイ,-10 Hawaii,-10 Hawaï,-10 Χαβάη
+timzontxtd,-09 Alaska,-９ アラスカ,-09 Alaska,-09 Alaska,-09 Αλάσκα
+timzontxte,-08 Los Angeles,-８ ロサンゼルス,-08 Los Angeles,-08 Los Angeles,-08 Λος Άντζελες
+timzontxtf,"-07 Denver, Arizona",-７ デンバー、アリゾナ,"-07 Denver, Arizona","-07 Denver, Arizona","-07 Ντένβερ, Αριζ."
+timzontxtg,-06 Chicago,-６ シカゴ,-06 Chicago,-06 Chicago,-06 Σικάγο
+timzontxth,-05 New York,-５ ニューヨーク,-05 New York,-05 New York,-05 Νέα Υόρκη
+timzontxti,-04 Santiago,-４ サンティアゴ,-04 Santiago,-04 Santiago,-04 Σαντιάγο
+timzontxtj,-03 Buenos Aires,-３ ブエノスアイレス,-03 Buenos Aires,-03 Buenos Aires,-03 Μπ. Άιρες
+timzontxtk,-02 Middle Atlantic,-２ ミドルアトランティック,-02 Mittelatlantik,-02 Midden-Atlantisch,-02 Μ. Ατλαντ.
+timzontxtl,"-01 Azores, Cabo Verde",-１ アゾレス、カーボベルデ,"-01 Azoren, Kapverden","-01 Azoren, Kaapverdië","-01 Αζόρες, Κ. Βέρντε"
+timzontxtm,"+00 London, Lissabon",+０ ロンドン、リスボン,"+00 London, Lissabon","+00 Londen, Lissabon","+00 Λονδ., Λισ."
+timzontxtn,"+01 Amsterdam, Berlin",+１ アムステルダム、ベルリン,"+01 Amsterdam, Berlin","+01 Amsterdam, Berlijn","+01 Άμστ., Βερλ."
+timzontxto,"+02 Kiev, Helsinki",+２ キーエフ、ヘルシンキ,"+02 Kiew, Helsinki","+02 Kiev, Helsinki","+02 Κίεβο, Ελσ."
+timzontxtp,+03 Constantinople,+３ コンスタンティノープル,+03 Konstantinopel,+03 Constantinopel,+03 Κων/πολη
+timzontxtq,+04 Tiflis,+４ ティフリス,+04 Tiflis,+04 Tbilisi,+04 Τιφλίδα
+timzontxtr,+05 Male,+５ マーレ,+05 Malé,+05 Malé,+05 Μαλέ
+timzontxts,+06 Dhaka,+６ ダッカ,+06 Dhaka,+06 Dhaka,+06 Ντάκα
+timzontxtt,"+07 Bangkok, Hanoi",+７ バンコク、ハノイ,"+07 Bangkok, Hanoi","+07 Bangkok, Hanoi","+07 Μπανγ., Ανόι"
+timzontxtu,"+08 Beijing, Perth",+８ ペキン、パース,"+08 Peking, Perth","+08 Beijing, Perth","+08 Πεκίνο, Περθ"
+timzontxtv,"+09 Tokyo, Seoul",+９ とうきょう、ソウル,"+09 Tokio, Seoul","+09 Tokio, Seoel","+09 Τόκιο, Σεούλ"
+timzontxtw,+10 Sydney,+１０ シドニー,+10 Sydney,+10 Sydney,+10 Σίδνεϊ
+timzontxtx,+11 New Caledonia,+１１ ニューカレドニア,+11 Neukaledonien,+11 Nieuw-Caledonië,+11 Ν. Καληδ.
+timzontxty,+12 Auckland,+１２ オークランド,+12 Auckland,+12 Auckland,+12 Όκλαντ
+timzontxtz,+13 Nuku'alofa,+１３ ヌクアロファ,+13 Nuku'alofa,+13 Nuku'alofa,+13 Νουκουαλόφα

@@ -2,73 +2,24 @@
 ;@                                                                            @
 ;@                S y m b O S   -   C o n t r o l   P a n e l                 @
 ;@                                                                            @
-;@             (c) 2004-2021 by Prodatron / SymbiosiS (Jˆrn Mika)             @
+;@             (c) 2004-2025 by Prodatron / SymbiosiS (Jˆrn Mika)             @
 ;@                                                                            @
 ;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+;TODO
+;clean up
+;- optimize buffers
+;drivers (finished?)
+;- check txtplfp patch in txtadv9/desktop for all screen drivers
+
 
 P_DEBOUT    equ #1f
 P_VERSION   equ #13
 
-relocate_start
 
 ;==============================================================================
 ;### CODE-TEIL ################################################################
 ;==============================================================================
-
-;### PROGRAMM-KOPF ############################################################
-
-prgdatcod       equ 0           ;L‰nge Code-Teil (Pos+Len beliebig; inklusive Kopf!)
-prgdatdat       equ 2           ;L‰nge Daten-Teil (innerhalb 16K Block)
-prgdattra       equ 4           ;L‰nge Transfer-Teil (ab #C000)
-prgdatorg       equ 6           ;Original-Origin
-prgdatrel       equ 8           ;Anzahl Eintr‰ge Relocator-Tabelle
-prgdatstk       equ 10          ;L‰nge Stack (Transfer-Teil beginnt immer mit Stack)
-prgdatrsv       equ 12          ;*reserved* (3 bytes)
-prgdatnam       equ 15          ;program name (24+1[0] chars)
-prgdatflg       equ 40          ;flags (+1=16colour icon available)
-prgdat16i       equ 41          ;file offset of 16colour icon
-prgdatrs2       equ 43          ;*reserved* (5 bytes)
-prgdatidn       equ 48          ;"SymExe10"
-prgdatcex       equ 56          ;zus‰tzlicher Speicher f¸r Code-Bereich
-prgdatdex       equ 58          ;zus‰tzlicher Speicher f¸r Data-Bereich
-prgdattex       equ 60          ;zus‰tzlicher Speicher f¸r Transfer-Bereich
-prgdatres       equ 62          ;*reserviert* (26 bytes)
-prgdatver       equ 88          ;required OS version
-prgdatism       equ 90          ;Icon (klein)
-prgdatibg       equ 109         ;Icon (gross)
-prgdatlen       equ 256         ;Datensatzl‰nge
-
-prgpstdat       equ 6           ;Adresse Daten-Teil
-prgpsttra       equ 8           ;Adresse Transfer-Teil
-prgpstspz       equ 10          ;zus‰tzliche Prozessnummern (4*1)
-prgpstbnk       equ 14          ;Bank (1-8)
-prgpstmem       equ 48          ;zus‰tzliche Memory-Bereiche (8*5)
-prgpstnum       equ 88          ;Programm-Nummer
-prgpstprz       equ 89          ;Prozess-Nummer
-
-prgcodbeg   dw prgdatbeg-prgcodbeg  ;L‰nge Code-Teil
-            dw prgtrnbeg-prgdatbeg  ;L‰nge Daten-Teil
-            dw prgtrnend-prgtrnbeg  ;L‰nge Transfer-Teil
-prgdatadr   dw #1000                ;Original-Origin                    POST Adresse Daten-Teil
-prgtrnadr   dw relocate_count       ;Anzahl Eintr‰ge Relocator-Tabelle  POST Adresse Transfer-Teil
-prgprztab   dw prgstk-prgtrnbeg     ;L‰nge Stack                        POST Tabelle Prozesse
-            dw 0                    ;*reserved*
-prgbnknum   db 0                    ;*reserved*                         POST bank number
-            db "Control Panel":ds 11:db 0 ;Name
-            db 1                    ;flags (+1=16c icon)
-            dw prgicn16c-prgcodbeg  ;16 colour icon offset
-            ds 5                    ;*reserved*
-prgmemtab   db "SymExe10"           ;SymbOS-EXE-Kennung                 POST Tabelle Speicherbereiche
-            dw 0                    ;zus‰tzlicher Code-Speicher
-            dw lnklenall+32+extlen+fntlen   ;zus‰tzlicher Data-Speicher
-            dw 0                    ;zus‰tzlicher Transfer-Speicher
-            ds 26                   ;*reserviert*
-            db 1,3                  ;required OS version (3.1)
-prgicnsml   db 2,8,8:db #44,#22:db #A8,#57:db #60,#AE:db #10,#4C:db #23,#80:db #57,#60:db #AE,#51:db #44,#22
-prgicnbig   db 6,24,24
-            db #00,#00,#00,#00,#00,#00,#FF,#FF,#FF,#FF,#80,#00,#8F,#0F,#0F,#1F,#80,#00,#8F,#0F,#0F,#1F,#80,#00,#9E,#F0,#87,#1F,#80,#00,#9E,#10,#8F,#1F,#80,#00,#9E,#B0,#9F,#FF,#80,#00,#9E,#E0,#AE,#12,#80,#00
-            db #9E,#73,#BF,#FE,#B0,#00,#9F,#CE,#E2,#7E,#C2,#80,#8F,#4D,#66,#7E,#8D,#80,#8F,#6A,#2A,#7E,#1B,#80,#8F,#EA,#62,#7E,#95,#80,#BF,#CE,#A2,#7E,#42,#E0,#AF,#05,#62,#7E,#85,#14,#BD,#EE,#3A,#F1,#1A,#FE
-            db #BD,#FD,#05,#05,#36,#FE,#BD,#CA,#79,#3A,#82,#F6,#9E,#E7,#F7,#35,#DD,#E0,#F0,#D6,#FF,#39,#FF,#C0,#00,#56,#F9,#FC,#F7,#80,#00,#56,#91,#EC,#73,#80,#00,#30,#10,#EC,#30,#00,#00,#00,#10,#E0,#00,#00
 
 setkeynum   equ 0   ;Keyboard
 setmounum   equ 1   ;Mouse
@@ -80,7 +31,6 @@ setdevnum   equ 6   ;Devices
 setlnknum   equ 7   ;Links
 
 ;### PRGPRZ -> Programm-Prozess
-prgupdflg   db 0            ;Flag, ob Sleep oder Idle (mit Time-Update)
 prgsubnum   db 0            ;Zwischenspeicher f¸r zu ˆffnendes Subwin
 
 prgwinanz   equ 8
@@ -92,7 +42,7 @@ prgwinsub   dw prgwinkey,-1
             dw prgwinfnt,-1
             dw prgwinsys,-1
             dw prgwindev,-1
-            dw prgwinlnk,-1
+            dw 0,-1
 prgwinsub2  dw keycnc, 0
             dw prgsub4,0
             dw 0,0
@@ -100,7 +50,7 @@ prgwinsub2  dw keycnc, 0
             dw prgsub4,0
             dw prgsub4,0
             dw devcnc, 0
-            dw prgsub4,0
+            dw 0,0
 
 windatprz   equ 3   ;Prozeﬂnummer
 windatsup   equ 51  ;Nummer des Superfensters+1 oder 0
@@ -108,43 +58,33 @@ windatsup   equ 51  ;Nummer des Superfensters+1 oder 0
 bnknumget   db 0
 bnknumput   db 0
 
-prgid   db "Control Pane"
-extid   db "SymbOS Advan"
-extfnd  db 0
+extfnd  db 0    ;extended desktop present flag (0=no, -1=yes)
+extprc  db 0    ;extended desktop process ID
 
 prgprz  call prgext
         call prgdbl
-        ld a,(prgprzn)
+        call prglng
+        ld a,(App_PrcID)
         ld (prgwindat+windatprz),a
         ld (prgwinkey+windatprz),a
         ld (prgwinmou+windatprz),a
         ld (prgwinfnt+windatprz),a
         ld (prgwindev+windatprz),a
         ld (prgwinsys+windatprz),a
-        ld (prgwinlnk+windatprz),a
-
         call sysini     ;muss an erster stelle stehen
         call prgver     ;platform check
         call keyini
         call devini
         call mouini
-        call lnkini
         call fntini
+        call lngini
         call sysini0
         call SySystem_HLPINI
 
-        ld c,MSC_DSK_WINOPN
-        ld a,(prgbnknum)
-        ld b,a
+        ld a,(App_BnkNum)
         ld de,prgwindat
-        call msgsnd
-
-prgprz1 call msgdsk             ;Message holen -> IXL=Status, IXH=Absender-Prozeﬂ
-        cp MSR_DSK_WOPNER
-        jp z,prgend             ;kein Speicher f¸r Fenster -> Prozeﬂ beenden
-        cp MSR_DSK_WOPNOK
-        jr nz,prgprz1           ;andere Message als "Fenster geˆffnet" -> ignorieren
-        ld a,(prgmsgb+4)
+        call SyDesktop_WINOPN
+        jp c,prgend
         ld (prgwin),a           ;Fenster wurde geˆffnet -> Nummer merken
 
 prgprz0 call msgget
@@ -180,7 +120,8 @@ prgprz5 ld a,(iy+8)
         jr nz,prgprz6
         ld hl,extfnd
         bit 0,(hl)
-        jp nz,prgrun3           ;Links & Extended Desktop -> Wird nachgeladen
+        jp z,prgrun3            ;Shortcuts -> Wird nachgeladen
+        jp prgrun4              ;Startmenu -> Wird nachgeladen
 prgprz6 ld (prgsubnum),a
         ld l,a
         ld h,0
@@ -188,64 +129,34 @@ prgprz6 ld (prgsubnum),a
         add hl,de
         ld a,(hl)
         cp -1
-        ld c,a
-        ld b,MSC_DSK_WINTOP
-;C=Window, B=Command
-prgprz4 ld a,(prgprzn)
-        db #dd:ld l,a
-        db #dd:ld h,PRC_ID_DESKTOP
-        ld iy,prgmsgb
         jr z,prgprz2
-        ld (iy+0),b                     ;Fenster vorhanden -> nach oben holen
-        ld (iy+1),c
-        rst #10
+        call SyDesktop_WINTOP
         jr prgprz0
-prgprz2 ld (iy+0),MSC_DSK_WINOPN        ;Fenster nicht da  -> neu ˆffnen
-        ld a,(prgbnknum)
-        ld (prgmsgb+1),a
+prgprz2 push hl
+        ld a,(App_BnkNum)
         dec hl
         ld d,(hl)
         dec hl
         ld e,(hl)
-        ld (prgmsgb+2),de
-        ld a,1
-        ld (de),a
-        inc hl
-        inc hl
-        push hl
-        rst #10
-prgprz3 call msgget                     ;Message holen -> IXL=Status, IXH=Absender-Prozeﬂ
+        call SyDesktop_WINOPN
         pop hl
-        cp MSR_DSK_WOPNER
-        jp z,prgprz0            ;kein Speicher f¸r Fenster -> egal, dann halt nichts machen
-        cp MSR_DSK_WOPNOK
-        push hl
-        jr nz,prgprz3           ;andere Message als "Fenster geˆffnet" -> ignorieren
-        pop hl
-        ld a,(iy+4)
+        jr c,prgprz0
         ld (hl),a
-        ld a,(prgsubnum)
-        cp 16
-        jp nz,prgprz0
-        ld a,1
-        ld (prgupdflg),a
         jp prgprz0
 
 ;### PRGRUN -> Modul nachladen
+prgrunlnk   db "%cpshcuts.exe",0
 prgrunstm   db "%cpstartm.exe",0
 
 prgrun1 ld hl,256*1+MSC_SYS_PRGSET
         jp cfgsav1
 prgrun2 ld hl,256*2+MSC_SYS_PRGSET
         jp cfgsav1
-prgrun3 ld c,MSC_SYS_PRGRUN
-        ld hl,prgrunstm
-        ld a,(prgbnknum)
-        ld b,l
-        ld e,h
-        ld d,a
-        ld a,PRC_ID_SYSTEM
-        call msgsnd1
+prgrun3 ld hl,prgrunlnk
+        jr prgrun0
+prgrun4 ld hl,prgrunstm
+prgrun0 ld a,(App_BnkNum)
+        call SySystem_PRGRUN
         jp prgprz0
 
 ;### PRGMEN -> Men¸ angeklickt
@@ -259,25 +170,29 @@ prgmen  ld l,(iy+8)
 ;### PRGINF -> Info-Fenster anzeigen
 prginf  ld b,1+128
         ld hl,prgmsginf         ;*** Info-Fenster
-        call prginf0
+        call prginf1
         jp prgprz0
-prginf0 ld (prgmsgb+1),hl
-        ld a,(prgbnknum)
-        ld c,a
-        ld (prgmsgb+3),bc
-        ld a,MSC_SYS_SYSWRN
-prginf1 ld (prgmsgb),a
-        jp devact1
+prginf0 ld b,1
+prginf1 ld de,0
+        ld a,(App_BnkNum)
+        jp SySystem_SYSWRN
+
+;### PRGERR -> show error message
+prgerr0 pop hl
+prgerr1 ld a,(fntlodhnd)
+        call SyFile_FILCLO
+prgerr2 call prgerr3
+        jp prgprz0
+prgerr3 ld hl,prgloderr
+        jp prginf0
 
 ;### PRGFOC -> Focus nehmen
 prgfoc  ld a,(prgwin)
-        ld b,a
-        ld c,MSC_DSK_WINMID
-        call msgsnd
+        call SyDesktop_WINTOP
         jp prgprz0
 
 ;### PRGSUB -> Sub-Fenster angeklickt
-;### Eingabe    E=Fenster-ID, IY=prgmsgb
+;### Eingabe    E=Fenster-ID, IY=App_MsgBuf
 prgsub  ld a,e
         ld b,prgwinanz
         ld hl,prgwinsub+2
@@ -306,11 +221,10 @@ prgsub2 ld a,prgwinanz
 prgsub4 ld b,0
         ld hl,prgwinsub+2
         add hl,bc
-        ld c,(hl)
+        ld a,(hl)
         ld (hl),-1
-        ld b,MSC_DSK_WINCLS
-        or a
-        jp prgprz4
+        call SyDesktop_WINCLS
+        jp prgprz0
 prgsub3 cp DSK_ACT_CONTENT      ;*** Inhalt wurde geklickt
         jp nz,prgprz0
         ld l,(iy+8)
@@ -329,38 +243,45 @@ prgsub3 cp DSK_ACT_CONTENT      ;*** Inhalt wurde geklickt
 prgsub5 jp (hl)
 
 ;### PRGBRO -> Browse-Fenster ˆffnen
-;### Eingabe    A=Typ (1=f¸r Link-Pfad, 2=Icon, 3=Extension-Applikation, 4=Font, 5=key load, 6=key save)
-;###            HL=Text
+;### Eingabe    A=Typ (3=Extension-Applikation, 4=Font, 5=key load, 6=key save, 7=kex preview)
+;###            HL=4char ext + 64char path
 prgbron db 0        ;type
 prgbro  ld d,0
-prgbro0 ld e,a
+prgbro0 ld bc,4+63
+prgbro1 ld e,a
         ld a,(prgbron)
         or a
         ret nz
+        push de
+        ld (prgbrc1+1),hl
+        ld (prgbrc2+1),bc
+        ld de,prgbropth
+        ld (App_MsgBuf+8),de
+        ldir
+        pop de
         ld a,e
         ld (prgbron),a
-        ld (prgmsgb+8),hl
-        ld a,(prgbnknum)
+        ld a,(App_BnkNum)
         add d
         ld l,a
         ld h,8
-        ld (prgmsgb+6),hl
+        ld (App_MsgBuf+6),hl
         ld hl,100
-        ld (prgmsgb+10),hl
+        ld (App_MsgBuf+10),hl
         ld hl,5000
-        ld (prgmsgb+12),hl
+        ld (App_MsgBuf+12),hl
         ld l,MSC_SYS_SELOPN
-        ld (prgmsgb),hl
-        ld a,(prgprzn)
+        ld (App_MsgBuf),hl
+        ld a,(App_PrcID)
         db #dd:ld l,a
         db #dd:ld h,PRC_ID_SYSTEM
-        ld iy,prgmsgb
+        ld iy,App_MsgBuf
         rst #10
         ret
 
 ;### PRGBRC -> Browse-Fenster schlieﬂen
 ;### Eingabe    P1=Typ (0=Ok, 1=Abbruch, 2=FileAuswahl bereits in Benutzung, 3=kein Speicher frei, 4=kein Fenster frei), P2=PfadL‰nge
-prgbrc  ld a,(prgmsgb+1)
+prgbrc  ld a,(App_MsgBuf+1)
         or a
         jr z,prgbrc1
         inc a
@@ -368,128 +289,134 @@ prgbrc  ld a,(prgmsgb+1)
         xor a
         ld (prgbron),a
         jp prgprz0
-prgbrc4 ld a,(prgmsgb+2)
-        ld (prgwinlnk+windatsup),a
+prgbrc4 ld a,(App_MsgBuf+2)
+        ;ld (prgwinlnk+windatsup),a
         jp prgprz0
-prgbrc1 ld hl,prgbron
-        ld e,(hl)
+prgbrc1 ld de,0
+prgbrc2 ld bc,4+63
+        ld hl,prgbropth
+        ldir
+        ld hl,prgbron
+        ld a,(hl)
+        sub 4
+        ld e,a
         ld (hl),0
-        ld a,(prgmsgb+2)           ;A=Pfadl‰nge
-        dec e
-        jr z,prgbrc3
-        dec e
-        jr z,prgbrc5
-        dec e
-        jr z,prgbrc6
-        dec e
-        jr z,prgprc7
+        ld a,(App_MsgBuf+2)           ;A=Pfadl‰nge
+        jr c,prgbrc6
+        jp z,fntlod             ;*** Font Pfad
         dec e
         jp z,keylod0
         dec e
         jp z,keysav0
+        dec e
+        jp z,lngkxp0
         jp prgprz0
-prgprc7 ld ix,prgobjfnt2a       ;*** Font Pfad
-        call strinp
-        ld e,16
-        call fntbrw0
-        jp fntlod
 prgbrc6 call syseng3            ;*** Extension Applikation
         ld e,17
         call systab0
         jp prgprz0
-prgbrc5 ld hl,lnkicnchs1        ;*** Link Icon
-        ld de,0
-        jp lnkicf0
-prgbrc3 call prgbrc2            ;*** Link Applikation
-        ld a,(setlnknum*4+prgwinsub+2)
-        cp -1
-        jp z,prgprz0
-        ld e,18
-        call lnklsc0
-        jp lnkicf
-prgbrc2 ld (prgobjlnk5b+8),a
-        ld (prgobjlnk5b+4),a
-        xor a
-        ld (prgobjlnk5b+2),a
-        ld (prgobjlnk5b+6),a
-        ret
 
-;### PRGDBL -> Test, ob Programm bereits l‰uft
+;### PRGLNG -> load language pack
+prglng  ld hl,(App_BegCode)
+        ld de,App_BegCode
+        dec h
+        add hl,de               ;HL=code area end=path
+        ex de,hl
+        ld a,(App_BnkNum)
+        ld c,a
+        ld hl,texts_int
+        ld ix,256*0+9           ;default language=9 (english), pack=0
+        ld iyl,0                ;language-file version 0
+        jp SySystem_LNGLOD
+
+;### PRGDBL -> Check, if program is already running
+prgdbln db "Control Pane"
 prgdbl  xor a
-        ld (prgcodbeg+prgdatnam),a
-        ld hl,prgid
+        ld (App_BegCode+prgdatnam),a
+        ld hl,prgdbln
         call prgdbl0
-        ld a,"C"
-        ld (prgcodbeg+prgdatnam),a
-        ld a,(prgmsgb+1)
         or a
+        ld a,"C"
+        ld (App_BegCode+prgdatnam),a
         ret nz
-        ld a,(prgmsgb+9)
-        ld c,MSC_GEN_FOCUS
-        call msgsnd1
-        jr prgend
-prgdbl0 ld b,l
-        ld e,h
-        ld l,a
-        ld c,MSC_SYS_PRGSRV
-        ld a,(prgbnknum)
-        ld d,a
-        ld a,PRC_ID_SYSTEM
-        call msgsnd1
-prgdbl1 db #dd:ld h,PRC_ID_SYSTEM
-        call msgget1
-        jr nc,prgdbl1
-        cp MSR_SYS_PRGSRV
-        jr nz,prgdbl1
-        ret
+        ld a,h
+        db #dd:ld h,a
+        ld a,(App_PrcID)
+        db #dd:ld l,a
+        ld iy,App_MsgBuf
+        ld (iy+0),MSC_GEN_FOCUS     ;send focus message to running control panel
+        rst #10
+        jp prgend
+prgdbl0 ld e,0
+        ld a,(App_BnkNum)
+        jp SySystem_PRGSRV
 
-;### PRGEXT -> search for advanced desktop
-prgext  ld hl,extid
+;### PRGEXT -> search for extended desktop
+prgextn db "Extended Des"
+prgext  ld hl,prgextn
         call prgdbl0
-        ld a,(prgmsgb+1)
+        ld a,(App_MsgBuf+9)
+        ld (extprc),a
+        ld a,(App_MsgBuf+1)
         cp 1
         sbc a
         ld (extfnd),a
         ret z
         ld hl,prgicnlnk8c
         ld (prgicnspr8+2),hl
-        ld hl,0
+        ld hl,prgicnlnk8d
         ld (prgicnspr8+4),hl
         ret
 
 ;### PRGVER -> Plattform-Check
-prgver  ld a,(cfgcpctyp)
-        and #1f
-if computer_mode=0          ;CPC -> 0-4 OK
-        cp 4+1
-elseif computer_mode=1      ;MSX -> 7-10 OK
-        cp 7
+prgver  ld a,(cfghrdtyp)
+        and #7f
+if     PLATFORM_TYPE=PLATFORM_CPC   ;CPC -> 0-4 OK
+        SYSTYPMIN equ 0
+        cp SYSTYPMIN+4+1
+elseif PLATFORM_TYPE=PLATFORM_MSX   ;MSX -> 7-10 OK
+        SYSTYPMIN equ 7
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 10+1
-elseif computer_mode=2      ;PCW -> 12-13 OK
-        cp 12
+        cp SYSTYPMIN+3+1
+elseif PLATFORM_TYPE=PLATFORM_PCW   ;PCW -> 12-13 OK
+        SYSTYPMIN equ 12
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 13+1
-elseif computer_mode=3      ;EP  -> 6 OK
-        cp 6
+        cp SYSTYPMIN+1+1
+elseif PLATFORM_TYPE=PLATFORM_EPR   ;EP  -> 6 OK
+        SYSTYPMIN equ 6
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 6+1
-elseif computer_mode=4      ;SVM -> 18 OK
-        cp 18
+        cp SYSTYPMIN+0+1
+elseif PLATFORM_TYPE=PLATFORM_SVM   ;SVM -> 18 OK
+        SYSTYPMIN equ 18
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 18+1
-elseif computer_mode=5      ;NC  -> 15-17 OK
-        cp 15
+        cp SYSTYPMIN+0+1
+elseif PLATFORM_TYPE=PLATFORM_NCX   ;NC  -> 15-17 OK
+        SYSTYPMIN equ 15
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 17+1
-elseif computer_mode=6      ;NXT -> 20 OK
-        cp 20
+        cp SYSTYPMIN+2+1
+elseif PLATFORM_TYPE=PLATFORM_ZNX   ;ZNX -> 20 OK
+        SYSTYPMIN equ 20
+        cp SYSTYPMIN
         jr c,prgver1
-        cp 20+1
+        cp SYSTYPMIN+0+1
+elseif PLATFORM_TYPE=PLATFORM_ISA   ;ISA -> 19 OK
+        SYSTYPMIN equ 19
+        cp SYSTYPMIN
+        jr c,prgver1
+        cp SYSTYPMIN+0+1
+elseif PLATFORM_TYPE=PLATFORM_NGZ   ;ISA -> 32 OK
+        SYSTYPMIN equ 32
+        cp SYSTYPMIN
+        jr c,prgver1
+        cp SYSTYPMIN+0+1
 endif
         ret c
-prgver1 ld b,1
-        ld hl,prgmsgwpf
+prgver1 ld hl,prgmsgwpf
         call prginf0
         jr prgend
 
@@ -499,14 +426,8 @@ prgend1 ld hl,cfgflags1
         jr z,prgend
         ld hl,256*1+MSC_SYS_SYSCFG
         call devact0
-prgend  ld a,(prgprzn)
-        db #dd:ld l,a
-        db #dd:ld h,PRC_ID_SYSTEM
-        ld iy,prgmsgb
-        ld (iy+0),MSC_SYS_PRGEND
-        ld a,(prgcodbeg+prgpstnum)
-        ld (iy+1),a
-        rst #10
+prgend  ld hl,(App_BegCode+prgpstnum)
+        call SySystem_PRGEND
 prgend0 rst #30
         jr prgend0
 
@@ -514,15 +435,15 @@ prgend0 rst #30
 ;### Ausgabe    CF=0 -> keine Message vorhanden, CF=1 -> IXH=Absender, (recmsgb)=Message, A=(recmsgb+0), IY=recmsgb
 ;### Veraendert 
 msgget  db #dd:ld h,-1
-msgget1 ld a,(prgprzn)
+msgget1 ld a,(App_PrcID)
         db #dd:ld l,a           ;IXL=Rechner-Prozeﬂ-Nummer
-        ld iy,prgmsgb           ;IY=Messagebuffer
+        ld iy,App_MsgBuf        ;IY=Messagebuffer
         rst #08                 ;Message holen -> IXL=Status, IXH=Absender-Prozeﬂ
         or a
         db #dd:dec l
         ret nz
-        ld iy,prgmsgb
-        ld a,(prgmsgb)
+        ld iy,App_MsgBuf
+        ld a,(App_MsgBuf)
         or a
         jr z,prgend
         scf
@@ -536,86 +457,7 @@ msgdsk  call msgget
         ld a,PRC_ID_DESKTOP
         db #dd:cp h
         jr nz,msgdsk            ;Message von anderem als Desktop-Prozeﬂ -> ignorieren
-        ld a,(prgmsgb)
-        ret
-
-;### MSGSND -> Message an Desktop-Prozess senden
-;### Eingabe    C=Kommando, B/E/D/L/H=Parameter1/2/3/4/5
-msgsnd  ld a,PRC_ID_DESKTOP
-msgsnd1 db #dd:ld h,a
-        ld a,(prgprzn)
-        db #dd:ld l,a
-        ld iy,prgmsgb
-        ld (prgmsgb+0),bc
-        ld (prgmsgb+2),de
-        ld (prgmsgb+4),hl
-        rst #10
-        ret
-
-;### SYSCLL -> Betriebssystem-Funktion aufrufen
-;### Eingabe    (SP)=Modul/Funktion, AF,BC,DE,HL,IX,IY=Register
-;### Ausgabe    AF,BC,DE,HL,IX,IY=Register
-sysclln db 0
-syscll  ld (prgmsgb+04),bc      ;Register in Message-Buffer kopieren
-        ld (prgmsgb+06),de
-        ld (prgmsgb+08),hl
-        ld (prgmsgb+10),ix
-        ld (prgmsgb+12),iy
-        push af
-        pop hl
-        ld (prgmsgb+02),hl
-        pop hl
-        ld e,(hl)
-        inc hl
-        ld d,(hl)
-        inc hl
-        push hl
-        ld (prgmsgb+00),de      ;Modul und Funktion in Message-Buffer kopieren
-        ld a,e
-        ld (sysclln),a
-        ld iy,prgmsgb
-        ld a,(prgprzn)          ;Desktop und System-Prozessnummer holen
-        db #dd:ld l,a
-        db #dd:ld h,PRC_ID_SYSTEM
-        rst #10                 ;Message senden
-syscll1 rst #30
-        ld iy,prgmsgb
-        ld a,(prgprzn)
-        db #dd:ld l,a
-        db #dd:ld h,PRC_ID_SYSTEM
-        rst #18                 ;auf Antwort warten
-        db #dd:dec l
-        jr nz,syscll1
-        ld a,(prgmsgb)
-        sub 128
-        ld e,a
-        ld a,(sysclln)
-        cp e
-        jr nz,syscll1
-        ld hl,(prgmsgb+02)      ;Register aus Message-Buffer holen
-        push hl
-        pop af
-        ld bc,(prgmsgb+04)
-        ld de,(prgmsgb+06)
-        ld hl,(prgmsgb+08)
-        ld ix,(prgmsgb+10)
-        ld iy,(prgmsgb+12)
-        ret
-
-;### CLCDEZ -> Rechnet Byte in zwei Dezimalziffern um
-;### Eingabe    A=Wert
-;### Ausgabe    L=10er-Ascii-Ziffer, H=1er-Ascii-Ziffer
-;### Veraendert AF
-clcdez  ld l,0
-clcdez1 sub 10
-        jr c,clcdez2
-        inc l
-        jr clcdez1
-clcdez2 add "0"+10
-        ld h,a
-        ld a,"0"
-        add l
-        ld l,a
+        ld a,(App_MsgBuf)
         ret
 
 ;### CFGLOD -> Config laden
@@ -648,58 +490,8 @@ cfgasv  ld hl,prgwinmen1a
 cfgbgr  ld hl,256*2+MSC_SYS_SYSCFG
         jr cfgsav1
 
-;### HELP-FILE
-SySystem_HLPFLG db 0    ;flag, if HLP-path is valid
-SySystem_HLPPTH db "%help.exe "
-SySystem_HLPPTH1 ds 128
-SySHInX db ".HLP",0
-
-SySystem_HLPINI
-        ld hl,(prgcodbeg)
-        ld de,prgcodbeg
-        dec h
-        add hl,de                   ;HL = CodeEnd = Command line
-        ld de,SySystem_HLPPTH1
-        ld bc,0
-        db #dd:ld l,128
-SySHIn1 ld a,(hl)
-        or a
-        jr z,SySHIn3
-        cp " "
-        jr z,SySHIn3
-        cp "."
-        jr nz,SySHIn2
-        ld c,e
-        ld b,d
-SySHIn2 ld (de),a
-        inc hl
-        inc de
-        db #dd:dec l
-        ret z
-        jr SySHIn1
-SySHIn3 ld a,c
-        or b
-        ret z
-        ld e,c
-        ld d,b
-        ld hl,SySHInX
-        ld bc,5
-        ldir
-        ld a,1
-        ld (SySystem_HLPFLG),a
-        ret
-
-hlpopn  ld a,(SySystem_HLPFLG)
-        or a
-        jp z,prgprz0
-        ld a,(prgbnknum)
-        ld d,a
-        ld a,PRC_ID_SYSTEM
-        ld c,MSC_SYS_PRGRUN
-        ld hl,SySystem_HLPPTH
-        ld b,l
-        ld e,h
-        call msgsnd1
+;### PRGHLP -> shows help
+prghlp  call SySystem_HLPOPN
         jp prgprz0
 
 
@@ -789,10 +581,8 @@ mousld1 inc a
         ld (ix+1),h
         call mousld2
         jp prgprz0
-mousld2 ld c,MSC_DSK_WININH
-        ld a,(1*4+prgwinsub+2)
-        ld b,a
-        jp msgsnd
+mousld2 ld a,(1*4+prgwinsub+2)
+        jp SyDesktop_WININH
 
 
 ;==============================================================================
@@ -801,45 +591,57 @@ mousld2 ld c,MSC_DSK_WININH
 
 keynum  db 4*16+3
 
-    if computer_mode=0
+    if PLATFORM_TYPE=PLATFORM_CPC
 keytab  db "                "
         db " [ ]  \ ^-@P;:/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=1
+elseif PLATFORM_TYPE=PLATFORM_MSX
 keytab  db "                "
         db "\] `  ",129," =-[P';/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
 keytab  db "                "
         db " [ ]  \ ^-@P;:/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
 keytab  db "                "
         db " [ ]  \ ^-@P;:/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=4
+elseif PLATFORM_TYPE=PLATFORM_SVM
 keytab  db "                "
         db " ] \  ` =-[P';/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NCX
 keytab  db "                "
         db " ] #  \ =-[P';/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
 keytab  db "                "
         db "           P;",34," ."
+        db "09OILKM,87UYHJN "
+        db "65RTGFBV43EWSDCX"
+        db "12 Q A Z        "
+elseif PLATFORM_TYPE=PLATFORM_ISA
+keytab  db "                "
+        db " ] \  ` =-[P';/."
+        db "09OILKM,87UYHJN "
+        db "65RTGFBV43EWSDCX"
+        db "12 Q A Z        "
+elseif PLATFORM_TYPE=PLATFORM_NGZ
+keytab  db "                "
+        db " ] \  ` =-[P';/."
         db "09OILKM,87UYHJN "
         db "65RTGFBV43EWSDCX"
         db "12 Q A Z        "
@@ -893,10 +695,10 @@ keyspl  ld a,(keydsp)
         ret
 
 ;### KEYGET -> Tastennummer von CPC nach MSX/PCW/EP/SVM/NC/NXT umwandeln
-;### Eingabe    A=Nummer (CPC)
-;### Ausgabe    A=Nummer (MSX/PCW/EP/SVM/NC/NXT)
+;### Eingabe    A=Nummer (CPC/SVM/ISA/NGZ)
+;### Ausgabe    A=Nummer (MSX/PCW/EP/NC/NXT)
 ;### Ver‰ndert  F,DE,HL
-if computer_mode=1
+if PLATFORM_TYPE=PLATFORM_MSX
 keygett db 69,71,70,66,62,55,52,12
         db 68,79,60,65,57,53,54,79
         db 67,14,52,16,56,79,21,79
@@ -907,7 +709,7 @@ keygett db 69,71,70,66,62,55,52,12
         db 04,03,26,44,40,25,24,45
         db 01,02,58,38,59,22,79,47
         db 79,79,79,79,79,79,58,61
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
 keygett db 14,06,78,05,09,72,77,07
         db 15,79,08,13,74,02,00,01
         db 16,17,18,19,76,21,22,23
@@ -918,7 +720,7 @@ keygett db 14,06,78,05,09,72,77,07
         db 56,57,58,59,60,61,62,63
         db 64,65,66,67,68,69,79,71
         db 79,79,79,79,79,79,64,23
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
 keygett db 59,58,57,60,35,34,71,87
         db 61,63,37,33,36,39,38,56
         db 65,77,62,54,32,07,01,15
@@ -929,7 +731,7 @@ keygett db 59,58,57,60,35,34,71,87
         db 27,29,21,22,13,11,03,05
         db 25,30,31,17,23,14,09,06
         db 80,81,82,83,84,87,87,46
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NCX
 keygett db 59,51,49,07,07,07,60,07  ;0
         db 03,17,07,07,07,07,07,07  ;8
         db 50,66,04,58,07,00,52,09  ;16
@@ -940,7 +742,7 @@ keygett db 59,51,49,07,07,07,60,07  ;0
         db 02,24,28,27,30,31,47,35  ;56
         db 18,25,10,26,19,36,16,34  ;64
         db 07,07,07,07,07,07,07,74  ;72
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
 keygett db 75,72,74,07,07,07,66,07  ;0
         db 73,64,07,07,07,07,07,07  ;8
         db 69,07,08,07,07,56,07,01  ;16
@@ -953,9 +755,13 @@ keygett db 75,72,74,07,07,07,66,07  ;0
         db 07,07,07,07,07,07,07,71  ;72
 endif
 
-if computer_mode=0      ;cpc ohne translation
+    if PLATFORM_TYPE=PLATFORM_CPC   ;cpc ohne translation
 keyget  ret
-elseif computer_mode=4  ;svm ohne translation (identisch mit cpc)
+elseif PLATFORM_TYPE=PLATFORM_SVM   ;svm ohne translation (identisch mit cpc)
+keyget  ret
+elseif PLATFORM_TYPE=PLATFORM_ISA   ;isa ohne translation (identisch mit cpc)
+keyget  ret
+elseif PLATFORM_TYPE=PLATFORM_NGZ   ;ngz ohne translation (identisch mit cpc)
 keyget  ret
 else
 keyget  ld hl,keygett
@@ -1072,22 +878,16 @@ keylod  ld a,5
         call prgbro
         jp prgprz0
 keylod0 ld hl,prginpkey2b
-        ld ix,(prgbnknum-1)
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILOPN
+        ld ix,(App_BnkNum-1)
+        call SyFile_FILOPN
         jp c,prgprz0
         push af
-        ld de,(prgbnknum)
+        ld de,(App_BnkNum)
         ld hl,keydef
         ld bc,4*80
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILINP
+        call SyFile_FILINP
         pop af
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILCLO
+        call SyFile_FILCLO
         ld de,256*5+256-9
         jp keysel0
 
@@ -1099,23 +899,17 @@ keysav  ld a,6
         jp prgprz0
 keysav0 call keydfs
         ld hl,prginpkey2b
-        ld ix,(prgbnknum-1)
+        ld ix,(App_BnkNum-1)
         xor a
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILNEW
+        call SyFile_FILNEW
         jp c,prgprz0
         push af
-        ld de,(prgbnknum)
+        ld de,(App_BnkNum)
         ld hl,keydef
         ld bc,4*80
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILOUT
+        call SyFile_FILOUT
         pop af
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILCLO
+        call SyFile_FILCLO
         ld de,256*5+256-9
         jp prgprz0
 
@@ -1143,9 +937,9 @@ keyact  ld hl,(keydsp)
         ld ix,keydef+320
         ld iy,66
         rst #28
-        ld de,(keyadr)
-        ld hl,keydef
         ld bc,320
+        ld hl,keydef
+keyact1 ld de,(keyadr)
         ld a,(bnknumput)
         rst #20:dw jmp_bnkcop
         ret
@@ -1168,10 +962,8 @@ keysel0 call keydfl
         ld de,prgdatkeyn-14*256+256-5
         call keysel1
         jp prgprz0
-keysel1 ld c,MSC_DSK_WININH
-        ld a,(0*4+prgwinsub+2)
-        ld b,a
-        jp msgsnd
+keysel1 ld a,(0*4+prgwinsub+2)
+        jp SyDesktop_WININH
 
 ;### KEYSPD -> Speed setzen
 keyspd  ld a,(keyobjdatn+2)
@@ -1195,19 +987,23 @@ keyspd  ld a,(keyobjdatn+2)
 ;### DEVICE-FENSTER ###########################################################
 ;==============================================================================
 
-if computer_mode=0          ;cpc
-stodty  equ #202
-elseif computer_mode=1      ;msx
+    if PLATFORM_TYPE=PLATFORM_CPC
+stodty  equ #203
+elseif PLATFORM_TYPE=PLATFORM_MSX
 stodty  equ #21c
-elseif computer_mode=2      ;pcw
-stodty  equ #202
-elseif computer_mode=3      ;ep
+elseif PLATFORM_TYPE=PLATFORM_PCW
+stodty  equ #203
+elseif PLATFORM_TYPE=PLATFORM_EPR
 stodty  equ #20f
-elseif computer_mode=4      ;svm
+elseif PLATFORM_TYPE=PLATFORM_SVM
 stodty  equ #203
-elseif computer_mode=5      ;nc
+elseif PLATFORM_TYPE=PLATFORM_NCX
 stodty  equ #203
-elseif computer_mode=6      ;nxt
+elseif PLATFORM_TYPE=PLATFORM_ZNX
+stodty  equ #203
+elseif PLATFORM_TYPE=PLATFORM_ISA
+stodty  equ #202
+elseif PLATFORM_TYPE=PLATFORM_NGZ
 stodty  equ #203
 endif
 
@@ -1461,10 +1257,8 @@ devtyp  ld a,(prgdevtyp)
         ld e,19
         call devtyp1
         jp prgprz0
-devtyp1 ld c,MSC_DSK_WININH
-        ld a,(6*4+prgwinsub+2)
-        ld b,a
-        jp msgsnd
+devtyp1 ld a,(6*4+prgwinsub+2)
+        jp SyDesktop_WININH
 
 ;### DEVDEL -> Device entfernen
 devdel  ld a,(prgobjdev3)
@@ -1598,7 +1392,7 @@ devact  call devsav
         ld e,4
         ld ix,cfgdevmem
         rst #28                 ;Device-Config speichern
-        call syscll
+        call SySystem_CallFunction
         db MSC_SYS_SYSFIL
         db FNC_FIL_DEVINI       ;Devices neu einbinden
         ret nc
@@ -1611,15 +1405,14 @@ devact  call devsav
         ld a,d
         call clcdez
         ld (prgerrdev3a),hl
-        ld b,1
         ld hl,prgdeverr
         jp prginf0
 
-devact0 ld (prgmsgb),hl
-devact1 ld a,(prgprzn)
+devact0 ld (App_MsgBuf),hl
+devact1 ld a,(App_PrcID)
         db #dd:ld l,a
         db #dd:ld h,PRC_ID_SYSTEM
-        ld iy,prgmsgb
+        ld iy,App_MsgBuf
         rst #10                 ;Devices aktualisieren
         ret
 
@@ -1628,84 +1421,32 @@ devact1 ld a,(prgprzn)
 ;### SYSTEM-FENSTER ###########################################################
 ;==============================================================================
 
-extlen  equ 768
+lnklenall   equ 0+400+896+192+1176  ;Gesamtl‰nge der Linkdaten
+extlen      equ 768
 
 ;### SYSINI -> System-Fenster initialisieren
-;prgtxtsys2f = "[unknown]"
-
 sysinit
-    if computer_mode=0
+    if PLATFORM_TYPE=PLATFORM_CPC
         dw prgtxtsys2a,prgtxtsys2b,prgtxtsys2c,prgtxtsys2d,prgtxtsys2e  ;0,1,2,3,4  CPC
-        dw prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=1
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f
+elseif PLATFORM_TYPE=PLATFORM_MSX
         dw prgtxtsys2r,prgtxtsys2m,prgtxtsys2n,prgtxtsys2o              ;7,8,9,10   MSX
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=2
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
+elseif PLATFORM_TYPE=PLATFORM_PCW
         dw prgtxtsys2p,prgtxtsys2q                                      ;12,13      PCW
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=3
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
+elseif PLATFORM_TYPE=PLATFORM_EPR
         dw prgtxtsys2h                                                  ;6          EP
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=4
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2i  ;18         SVM
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=5
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2j,prgtxtsys2k,prgtxtsys2l,prgtxtsys2f  ;15,16,17   NC
-        dw prgtxtsys2f,prgtxtsys2f
-
-elseif computer_mode=6
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f,prgtxtsys2f
-        dw prgtxtsys2f,prgtxtsys2s                                      ;20         NXT
+elseif PLATFORM_TYPE=PLATFORM_SVM
+        dw prgtxtsys2i                                                  ;18         SVM
+elseif PLATFORM_TYPE=PLATFORM_NCX
+        dw prgtxtsys2j,prgtxtsys2k,prgtxtsys2l                          ;15,16,17   NC
+elseif PLATFORM_TYPE=PLATFORM_ZNX
+        dw prgtxtsys2s                                                  ;20         NXT
+elseif PLATFORM_TYPE=PLATFORM_ISA
+        dw prgtxtsys2t                                                  ;19         ISA
+elseif PLATFORM_TYPE=PLATFORM_NGZ
+        dw prgtxtsys2u                                                  ;32         NGZ
 endif
 
-if computer_mode=4
+if PLATFORM_TYPE=PLATFORM_SVM
 sysini5 and #f
         call clcdez
         ld a,l
@@ -1728,13 +1469,21 @@ sysini  ld ix,prgtxtsys2i1
         pop af
         ld c,0
         call sysini5 
+elseif PLATFORM_TYPE=PLATFORM_ISA
+PORT_IN_MICROCODE_YEAR  equ #E6     ;input reads the microcode date from microcode flash (reads from flash page 6)
+PORT_IN_MICROCODE_MONTH equ #E7     ;
+PORT_IN_MICROCODE_DAY   equ #E8     ;
+
+sysini  in a,(PORT_IN_MICROCODE_YEAR) :call clcdez:ld (prgtxtsys2t1+0),hl
+        in a,(PORT_IN_MICROCODE_MONTH):call clcdez:ld (prgtxtsys2t1+2),hl
+        in a,(PORT_IN_MICROCODE_DAY)  :call clcdez:ld (prgtxtsys2t1+4),hl
 else
 sysini
 endif
         ld e,7
         ld hl,jmp_sysinf
         rst #28             ;DE=System, IX=Data, IY=Transfer
-        ld a,(prgbnknum)
+        ld a,(App_BnkNum)
         add a:add a:add a:add a
         db #fd:add l
         ld (bnknumget),a
@@ -1756,26 +1505,34 @@ endif
         ld ix,syssyspth
         ld iy,0
         rst #28
-        ld hl,jmp_sysinf        ;*** Autoexec-Pfad + Flag holen
-        ld de,256*33+5
+        ld hl,jmp_sysinf        ;*** Autoexec-Pfad holen
+        ld de,256*31+5
         ld ix,sysautpth
         ld iy,66+2+6+9+32
         rst #28
-        ld hl,jmp_sysinf        ;*** Flags holen
+        ld hl,jmp_sysinf        ;*** get flags + computer type
         ld de,256*9+5
         ld ix,cfgmem
         ld iy,66+2+6
         rst #28
         ld a,(cfgflags1)
-        push af
-        and 2
-        rrca
-        ld (cfgselflg),a
-        pop af
+        ld e,a
         and 1
         add a
         inc a
-        ld (prgwinmen1a),a
+        ld (prgwinmen1a),a      ;autosave
+        rrc e
+        ld a,e
+        and 1
+        ld (cfgselflg),a        ;fullmem for fileselect
+        rrc e
+        ld a,e
+        and 1
+        ld (cfgicnflg),a        ;startmenu icon
+        ld a,e
+        rrca
+        and 1
+        ld (sysautflg),a        ;autoexec
         ld hl,jmp_memsum        ;*** Speicher-Infos holen
         rst #28                 ;E,IX=freier Speicher insgesamt, D=Anzahl verf¸gbarer B‰nke (jenseits 64K)
         inc d
@@ -1794,9 +1551,10 @@ endif
         ld hl,prgtxtsys1g
         ld bc,8
         ldir
-        ld a,(cfgcpctyp)        ;*** Plattform
+        ld a,(cfghrdtyp)        ;*** Plattform
+        and #7f
+        sub SYSTYPMIN
         ld de,prgtxtsys20
-        and #1f
         add a
         ld bc,sysinit
         call sysini3
@@ -1808,12 +1566,11 @@ endif
         ld hl,jmp_sysinf
         rst #28             ;DE=System, IX=Data, IY=Transfer
         ld hl,lnkcfgdat
-        ld bc,lnklenall+32
+        ld bc,32
         add hl,bc
         ld (syslsta),hl
         ex de,hl
-        push ix
-        pop hl
+        push ix:pop hl
         ld bc,lnklenall
         add hl,bc
         ld (syslstm),hl
@@ -2067,7 +1824,7 @@ syseng2 ld ix,prgobjsysaa:call strinp
         ld bc,15
         add hl,bc
         ld de,prginpsysba
-        ld bc,33
+        ld bc,32
         ldir
 syseng3 ld ix,prgobjsysba:call strinp
         ret
@@ -2088,9 +1845,7 @@ systab1 ld (prgwinsys0),hl
         call systab0
         jp prgprz0
 systab0 ld a,(setsysnum*4+prgwinsub+2)
-        ld c,MSC_DSK_WININH
-        ld b,a
-        jp msgsnd
+        jp SyDesktop_WININH
 
 ;### SYSADD -> Filetype-Eintrag hinzuf¸gen
 sysadde db "???":ds 15-3
@@ -2157,7 +1912,9 @@ sysdel0 ld c,a
 ;### SYSBRW -> Browse-Button wurde geklickt
 sysbrw  ld a,3
         ld hl,prgobjsysbb
-        call prgbro
+        ld bc,4+32
+        ld d,0
+        call prgbro1
         jp prgprz0
 
 ;### SYSAPL -> System-Fenster APPLY-Button
@@ -2188,11 +1945,12 @@ sysact  call sysenp             ;*** Fileextensions speichern
         ld ix,syssyspth
         ld iy,0
         rst #28
-        ld hl,jmp_sysinf        ;*** Autoexec-Pfad + Flag speichern
-        ld de,256*33+6
+        ld hl,jmp_sysinf        ;*** Autoexec-Pfad speichern
+        ld de,256*32+6
         ld ix,sysautpth
         ld iy,66+2+6+9+32
         rst #28
+
         ld a,(prgobjsys3i+12)   ;*** Boot-Drive ¸bernehmen
         add a:add a
         ld l,a
@@ -2201,11 +1959,21 @@ sysact  call sysenp             ;*** Fileextensions speichern
         add hl,de
         ld a,(hl)
         ld (cfgbotdrv),a
-        ld a,(cfgselflg)        ;*** Flags speichern
+        ld a,(sysautflg)        ;*** Flags speichern
+        add a:add a:add a
+        ld d,a
+        ld hl,cfgicnflg 
+        ld a,(hl)
         add a
+        dec hl
+        add (hl)
+        add a
+        or d
         ld hl,cfgflags1
         ld e,(hl)
         res 1,e
+        res 2,e
+        res 3,e
         or e
         ld (hl),a
         ld hl,jmp_sysinf
@@ -2217,733 +1985,717 @@ sysact  call sysenp             ;*** Fileextensions speichern
 
 
 ;==============================================================================
-;### LINK-FENSTER #############################################################
+;### FONT TAB #################################################################
 ;==============================================================================
 
-lnkadrmen   equ 0               ;Offset Menunamen (20*20)
-lnkadrpth   equ 0+400           ;Offset Pfade     (28*32)
-lnkadricn   equ 0+400+896       ;Offset Iconnamen (8*24)
-lnkadrspr   equ 0+400+896+192   ;Offset Sprites   (8*147)
-lnklenall   equ 0+400+896+192+1176  ;Gesamtl‰nge der Linkdaten
-
-lnklstnum   db 0    ;0=Desktop, 1=Startmenu, 2=Taskbar
-lnkentnum   db 0    ;ausgew‰hlter Eintrag
-
-;### LNKINI -> Link-Fenster initialisieren
-lnkini  ld e,9                  ;*** Icons updaten
-        rst #20:dw jmp_sysinf
-        ld e,7                  ;*** Namen, Pfade und Icons holen
-        ld hl,jmp_sysinf
-        rst #28             ;DE=System, IX=Data, IY=Transfer
-        push ix
-        pop hl
-        ld de,lnkcfgdat
-        ld bc,lnklenall
-        ld a,(bnknumget)
-        rst #20:dw jmp_bnkcop
-        ld hl,jmp_sysinf        ;*** Anzahlen holen
-        ld de,256*36+5
-        ld ix,cfgicnanz
-        ld iy,66+2+6+5
-        rst #28
-        call lnklsi
-        call lnkeni
-        ret
-
-;### LNKLSI -> ausgew‰hlte Liste initialisieren
-lnklsi  call lnklsi1
-        ld de,lnkcfgdat
-        add hl,de
-        ex de,hl                ;DE=Namen
-        ld a,(ix+0)             ;A=Anzahl
-        ld (prgobjlnk1),a
-        ld a,20
-        ld hl,lnkentlst+1       ;HL=Listeneintr‰ge
-        push hl
-lnklsi2 res 7,(hl)
-        inc hl
-        ld (hl),e
-        inc hl
-        ld (hl),d
-        inc hl:inc hl
-        ex de,hl
-        add hl,bc
-        ex de,hl
-        dec a
-        jr nz,lnklsi2
-        ld ix,prgobjlnk1        ;Liste resetten
-        ld (ix+2),a
-        ld (ix+12),a
-        pop hl
-        set 7,(hl)              ;erster Eintrag ist markiert
-        ld a,(lnklstnum)
-        ld ix,prgdatlnk1
-        ld iy,prgdatlnk2
-        cp 1
-        jr c,lnklsi3
-        res 7,(ix+2+00)         ;Startmenu -> 1 x Langname aktivieren
-        set 7,(ix+2+16)
-        set 7,(ix+2+32)
-        res 7,(iy+2+00)         ;Startmenu -> Icon-Grafik deaktivieren
-        ld a,21
-        ld (prggrplnk),a
-        ret
-lnklsi3 set 7,(ix+2+00)         ;Desktop   -> 2 x Kurzname aktivieren
-        res 7,(ix+2+16)
-        res 7,(ix+2+32)
-        set 7,(iy+2+00)         ;Desktop   -> Icon-Grafik aktivieren
-        ld a,30
-        ld (prggrplnk),a
-        ret
-; -> A=Listentyp, HL=Namen-Adressenoffset, BC=Namenl‰nge, (IX)=Anzahl
-lnklsi1 ld a,(lnklstnum)
-        ld hl,lnkadricn
-        ld bc,24
-        ld ix,cfgicnanz
-        cp 1
-        ret c
-        ld hl,lnkadrmen
-        ld bc,20
-        ld ix,cfgmenanz
-        ret
-
-;### LNKENI -> ausgew‰hlten Eintrag initialisieren
-lnkeni  call lnklsi1
-        cp 1
-        ld a,(prgobjlnk1+12)
-        ld (lnkentnum),a
-        call lnkeni0
-        ld de,prgobjlnk6x
-        ld bc,19
-        ldir
-        ld bc,12-19
-        add hl,bc
-        ld de,prgobjlnk6y
-        ld bc,12
-        ldir
-        push iy
-        pop hl
-        ld de,prgobjlnk5x
-        ld bc,31
-        ldir
-        ld ix,prgobjlnk6b
-        call strinp
-        ld ix,prgobjlnk6c
-        call strinp
-        ld ix,prgobjlnk6d
-        call strinp
-        ld ix,prgobjlnk5b
-        call strinp
-        ld a,(lnklsttyp)
-        cp 1
+;### CPLOPR -> send font/language/keyboard command to extended desktop and check answer
+;### Input      C=command (1=font preview, 2=font load, 3=font remove, 4=language, 5=keyboard info, 6=keyboard preview, 7=keyboard load), B=bank, HL=address
+;### Output     CF=0 ok, CF=1 error
+cplopr  ld (App_MsgBuf+2),bc
+        ld (App_MsgBuf+4),hl
+        ld hl,FNC_DXT_CPLOPR*256+MSR_DSK_EXTDSK
+        ld (App_MsgBuf+0),hl
+        ld a,c
+        ld (cplopr2+1),a
+        ld a,(extprc)
+        ld ixh,a
+        ld a,(App_PrcID)
+        ld ixl,a
+        ld iy,App_MsgBuf
+        rst #10                 ;send message to extended desktop
+cplopr1 ld a,(extprc)
+        ld ixh,a
+        call msgget1
+        jr nc,cplopr1
+        ld a,(App_MsgBuf+1)
+cplopr2 cp 0
         ret z
-lnkeni5 ld a,(lnkentnum)
-        inc a
-        ld bc,147
-        ld hl,400+896+192-147
-        ld de,4
-        ld ix,cfgicnpos-4
-lnkeni3 add hl,bc
-        add ix,de
-        dec a
-        jr nz,lnkeni3
-        ld bc,lnkcfgdat
-        add hl,bc
-        ld (prgdatlnk3+4),hl
-        ld e,(ix+0)
-        ld d,(ix+1)
-        push de
-        ex (sp),ix
-        ld iy,prginplnk8c
-        call lnkeni4
-        pop ix
-        ld e,(ix+2)
-        ld d,(ix+3)
-        push de
-        pop ix
-        ld iy,prginplnk8d
-lnkeni4 ld de,0
-        push iy
-        call clcn32
-        ex (sp),iy
-        pop hl
-        db #fd:ld e,l
-        db #fd:ld d,h
-        or a
-        sbc hl,de
-        inc l
-        ld (iy-6),l
-        ld (iy-10),l
-        ret
-;A=Nummer, ZF=Listentyp (0=Desktop, 1=Startmenu) -> IY=Pfad, HL=Name
-lnkeni0 ld de,32
-        ld iy,400
-        jr z,lnkeni1
-        ld iy,32*20+400
-lnkeni1 or a
-        jr z,lnkeni2
-        add hl,bc
-        add iy,de
-        dec a
-        jr lnkeni1
-lnkeni2 ld de,lnkcfgdat
-        add iy,de
-        add hl,de
+        scf
         ret
 
-;### LNKLSC -> Listen-Typ wurde geklickt
-lnklsc  call lnkenc2
-        ld a,(lnklsttyp)
-        ld hl,lnklstnum
+;### FNTTAB -> Tab wechseln
+fnttabo db 0
+fnttab  ld a,(prgobjfntta)
+        ld hl,fnttabo
         cp (hl)
         jp z,prgprz0
         ld (hl),a
-        call lnklsi
-        ld e,4
-        call lnklsc0
-        ld e,20
-        call lnklsc0
-        ld a,(lnklsttyp)
-        cp 1
-        jr z,lnklsc1
-        ld e,-9
-        ld d,21
-        call lnklsc0
-lnklsc1 jr lnkenc1
-lnklsc0 ld c,MSC_DSK_WININH
-        ld a,(setlnknum*4+prgwinsub+2)
-        ld b,a
-        jp msgsnd
-
-;### LNKENC -> Eintrag wurde in Liste geklickt
-lnkencf db 0
-lnkenc  call lnkenc2
-        ld a,(prgobjlnk1+12)
-        ld hl,lnkentnum
-        cp (hl)
-        jp z,prgprz0
-lnkenc1 call lnkeni
-        ld e,14         ;Name aktualisieren
-        call lnklsc0
-        ld e,15
-        call lnklsc0
-        ld e,16
-        call lnklsc0
-        ld e,18         ;Pfad aktualisieren
-lnkenc8 call lnklsc0
-        ld a,(lnklsttyp)
-        cp 1
-        jp z,prgprz0
-        ld e,23         ;Icon aktualisieren
-        call lnklsc0
-        ld e,27         ;Pos aktualisieren
-        call lnklsc0
-        ld e,29
-        call lnklsc0
-        jp prgprz0
-
-lnkenc2 call lnklsi1    ;A=Listentyp, HL=Namen-Adressenoffset, BC=Namenl‰nge, (IX)=Anzahl
-        cp 1
-        push af
-        xor a
-        ld (lnkencf),a
-        ld a,(lnklstnum)
-        cp 1
-        ld a,(lnkentnum)
-        call lnkeni0    ;IY=Pfad, HL=Name
-        pop af
-        ex de,hl
-        ld hl,prgobjlnk6x
-        ld c,-1
-        ld b,19
-        jr z,lnkenc3    ;*** Startmenu
-        push bc         ;*** Desktop
-        push de
-        push iy
-        push hl
-        ld a,(lnkentnum)
-        add a:add a
-        ld e,a
-        ld d,0
-        ld iy,cfgicnpos
-        add iy,de
-        ld ix,prginplnk8c
-        xor a
-        ld bc,0
-        ld de,10000
-        push iy
-        call clcr16
-        pop iy
-        jr c,lnkenc6
-        ld (iy+0),l
-        ld (iy+1),h
-lnkenc6 ld ix,prginplnk8d
-        xor a
-        ld bc,0
-        ld de,10000
-        push iy
-        call clcr16
-        pop iy
-        jr c,lnkenc7
-        ld (iy+2),l
-        ld (iy+3),h
-lnkenc7 pop hl
-        pop iy
-        pop de
-        pop bc
-        ld b,12
-        call lnkenc4
-        ld hl,prgobjlnk6y
-        ld b,12
-lnkenc3 call lnkenc4
-        push iy
-        pop de
-        ld hl,prgobjlnk5x
-        ld bc,31
-        ldir
-        ld a,(lnkencf)
         or a
-        ret z
-        ld e,4
-        jp lnklsc0
-lnkenc4 ld a,(de)
-        cp (hl)
-        jr z,lnkenc5
+        ld hl,prggrpfntb
+        jr z,fnttab1
+        ld hl,prggrpfnta
+fnttab1 ld (prgwinfnt0),hl
+        ld e,-1
+        call fnttab0
+        jp prgprz0
+fnttab0 ld a,(setfntnum*4+prgwinsub+2)
+        jp SyDesktop_WININH
+
+fnttxtsz0   db " 96"
+fnttxtsz1   db "255"
+fntdatlen   equ 96*9+2
+
+fntcuradr   dw 0    ;current system font address (including header, system chars)
+fntcursiz   db 0    ;\ current system font size (0=96, 1=255)
+fntcurbnk   db 0    ;/ current system font rambank (>0=enhanced big font, 0=no big font)
+fntprvadr   dw 0    ;preview font address (behind 2byte header)
+fntprvchg   db 0    ;\ flag, if new preview loaded
+fntdatext   db 0    ;/ flag, if enhanced 255 font can be switched on/off (96char systems with extended desktop)
+
+;### FNTINI -> Font-Tab initialisieren
+fntini  call fntini0
+        push de
+        dec ixl                 ;set current character count
+        call fntini7
+        ld a,(extfnd)           ;check, if 96/255 switchable
+        or a
+        jr z,fntini5
+        ld a,ixl                ;0=255, -1=96
+        or ixh                  ;0=no big font, >0=big font
+        jr z,fntini5            ;no big font and 255 -> system supports 255 directly, not switchable
         ld a,1
-        ld (lnkencf),a
-lnkenc5 ldi
-        djnz lnkenc4
-        ret
-
-;### LNKEDW -> Eintrag in Liste nach unten schieben
-lnkedw  call lnkedw0
-lnkedw1 jp z,prgprz0
-lnkedw2 call lnkeni5
-        ld e,4
-        jp lnkenc8
-lnkedw0 ld a,(lnkentnum)
-        ld e,a
-        inc a
-        ld d,a
-        ld ix,prgobjlnk1
-        cp (ix+0)
-        jr lnkeup1
-
-;### LNKEUP -> Eintrag in Liste nach oben schieben
-lnkeup  call lnkeup0
-        jr lnkedw1
-lnkeup0 ld a,(lnkentnum)
-        ld e,a
-        ld d,a
-        dec d
+fntini5 ld (fntdatext),a
+        jr z,fntini6
+        ld a,17
+        ld (prgdatfnt1+00+2),a
+        ld a,ixh
         or a
-lnkeup1 ret z                   ;E=alte, D=neue Position
-        ld c,a
-        ld a,d
-        ld d,c                  ;D=unteres zu tauschendes Element
-        ld (lnkentnum),a        ;neue Pos eintragen
-        ld (prgobjlnk1+12),a
-        ld bc,lnkentlst+1
-        add a:add a
-        ld l,a
-        ld h,0
-        add hl,bc
-        set 7,(hl)              ;neue Markierung setzen
-        ld a,e
-        add a:add a
-        ld l,a
-        ld h,0
-        add hl,bc
-        res 7,(hl)              ;alte Markierung lˆschen
-        call lnklsi1            ;A=Listentyp, HL=Namen-Adressenoffset, BC=Namenl‰nge, (IX)=Anzahl
-        push af
-        push de
-        ld a,d
-        call lnkesw             ;Name verschieben
-        pop de
-        pop af
-        push af
-        push de
-        ld hl,lnkadrpth
-        jr z,lnkeup2
-        ld hl,20*32+lnkadrpth
-lnkeup2 ld bc,32
-        ld a,d
-        call lnkesw             ;Pfad verschieben
-        pop de
-        pop af
-        jr z,lnkeup3
-        ld hl,lnkadrspr
-        ld bc,147
-        ld a,d
-        call lnkesw             ;Icon verschieben
-lnkeup3 ld a,1
-        or a
-        ret
+        jr z,fntini6
+        ld a,1
+fntini6 ld (prgchkfnt3a),a
 
-;### LNKESW -> Elemente vertauschen
-;Eingabe    A=Nummer des unteren Elements, HL=Adressen-Offset des ersten Element, BC=Elementl‰nge
-lnkeswb ds 147
-lnkesw  ld de,lnkcfgdat
-        add hl,de
-lnkesw1 ld e,l
-        ld d,h
-        add hl,bc
-        dec a
-        jr nz,lnkesw1           ;DE=oberer, HL=unterer Name
-        push hl
-        push de
-        ld de,lnkeswb           ;unteren in Buffer
-        push bc:ldir:pop bc
-        pop hl                  ;oberen in unteren
-        pop de
-        push hl
-        push bc:ldir:pop bc
-        pop de
-        ld hl,lnkeswb           ;Buffer in oberen
-        ldir
-        ret
-
-;### LNKADD -> F¸gt Eintrag in Liste hinzu
-lnkaddn1 db "New Link",0
-lnkaddn2 db "New":ds 12-3:db "Link",0
-lnkaddi1 db 6,24,24,#30,#F0,#F0,#F0,#80,#00,#20,#00,#00,#00,#C0,#00,#20,#00,#00,#00,#A0,#00,#20,#00,#00,#00,#90,#00,#20,#00,#00,#00,#F0,#80,#20,#00,#00,#00,#77,#80,#20,#00,#00,#00,#00,#C4,#20,#F3,#FF,#DF,#6C,#C4,#20,#F7,#FF,#FF,#EC,#C4
-         db #20,#80,#00,#00,#20,#C4,#20,#80,#00,#00,#20,#C4,#20,#91,#11,#11,#20,#C4,#20,#B3,#AB,#AB,#A8,#C4,#20,#A3,#AB,#BB,#A8,#C4,#20,#91,#11,#11,#20,#C4,#20,#80,#00,#00,#20,#C4,#20,#B1,#B2,#B0,#A8,#C4,#20,#80,#00,#00,#20,#C4,#20,#F0
-         db #F0,#F0,#E0,#C4,#20,#00,#00,#00,#00,#C4,#20,#00,#00,#00,#00,#C4,#20,#00,#00,#00,#00,#C4,#30,#F0,#F0,#F0,#F0,#C4,#11,#FF,#FF,#FF,#FF,#CC
-lnkaddi2 db 2,8,8,#70,#80,#40,#C0,#40,#E0,#40,#20,#51,#A8,#41,#A8,#40,#20,#70,#E0
-
-lnkadd  call lnkenc2
-        call lnklsi1        ;A=Listentyp, HL=Namen-Adressenoffset, BC=Namenl‰nge, (IX)=Anzahl
-        ld d,a              ;D=Listentyp
-        ld e,20
-        ld iy,lnkadrpth
-        jr z,lnkadd1
-        ld e,8
-        ld iy,20*32+lnkadrpth
-lnkadd1 ld a,(ix+0)
-        cp e
-        jp z,prgprz0
-        inc (ix+0)          ;Anzahl erhˆhen
-        ld e,a              ;E=Nummer des neuen Eintrages
-        push de
-        ld ix,lnkadrspr
-lnkadd2 add hl,bc
-        ld de,32
-        add iy,de
-        ld de,147
-        add ix,de
-        dec a
-        jr nz,lnkadd2
-        ld de,lnkcfgdat     ;HL=Name, IY=Pfad, IX=Sprite
-        add hl,de
-        add iy,de
-        add ix,de
-        pop af
-        push af
-        dec a
-        ex de,hl
-        ld hl,lnkaddn1
-        jr z,lnkadd4
-        ld hl,lnkaddn2
-lnkadd4 ldir                ;Dummy Name kopieren
-        push iy:pop de
-        ld hl,syssyspth     ;Dummy Pfad setzen
-        ld bc,32
-        ldir
-        or a
-        jr z,lnkadd5
-        push ix             ;Dummy Icon kopieren
-        pop de
-        ld hl,lnkaddi1
-        ld bc,147
-        ldir
-lnkadd5 ld bc,lnkentlst+1
-        ld a,(lnkentnum)
-        add a:add a
-        ld l,a
-        ld h,0
-        add hl,bc
-        res 7,(hl)          ;alte Markierung lˆschen
-        pop de
-        ld a,e
-        add a:add a
-        ld l,a
-        ld h,0
-        add hl,bc
-        set 7,(hl)          ;neue Markierung setzen
-        ld hl,prgobjlnk1
-        inc (hl)
-        ld a,e
-        jr lnkdel2
-
-;### LNKDEL -> Lˆscht Eintrag aus Liste
-lnkdel  ld a,(prgobjlnk1)
-        dec a
-        jp z,prgprz0
-        push af
-lnkdel1 call lnkedw0            ;Eintrag ganz nach unten schieben
-        jr nz,lnkdel1
-        pop af
-        ld (prgobjlnk1),a       ;Liste hat einen Eintrag weniger
-        ld hl,lnkentlst+1
-        set 7,(hl)              ;erster Eintrag ist markiert
-        call lnklsi1            ;A=Listentyp, HL=Namen-Adressenoffset, BC=Namenl‰nge, (IX)=Anzahl
-        dec (ix+0)
-        xor a
-lnkdel2 ld (prgobjlnk1+12),a    ;erster Eintrag ausgew‰hlt
-        ld e,4
-        call lnklsc0            ;Liste aktualisieren
-        jp lnkenc1              ;Eintrag aktualisieren
-
-;### LNKICF -> Icon des Files verwenden
-lnkicfh db 0
-lnkicf  ld a,(lnklstnum)
-        dec a
-        jp z,prgprz0
-        ld hl,prgobjlnk5x
-        ld de,109
-lnkicf0 push de
-        ld a,(prgbnknum)
-        db #dd:ld h,a
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILOPN
-        pop ix
-        jp c,prgprz0
-        ld (lnkicfh),a
-        ld b,a
-        ld iy,0
-        ld c,0
-        db #dd:ld a,l
-        db #dd:or h
-        jr z,lnkicf1
-        ld a,b
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILPOI
-        jp c,lnkicfe
-lnkicf1 ld a,(prgbnknum)
-        ld e,a
-        ld a,(lnkicfh)
-        ld hl,lnkeswb
-        ld bc,147
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILINP
-        jp c,lnkicfe
-        jp nz,lnkicfe
-        call lnkicf2
-        ld ix,lnkeswb
-        ld a, 6:cp (ix+0):jp nz,prgprz0
-        ld a,24:cp (ix+1):jp nz,prgprz0
-        ld a,24:cp (ix+2):jp nz,prgprz0
-        ld a,(lnkentnum)
-        ld hl,lnkadrspr
-        ld bc,147
-lnkicf3 or a
-        jr z,lnkicf4
-        add hl,bc
-        dec a
-        jr lnkicf3
-lnkicf4 ld de,lnkcfgdat
-        add hl,de
-        ex de,hl
-        ld hl,lnkeswb
-        ldir
-        ld e,23
-        call lnklsc0
-        jp prgprz0
-lnkicf2 ld a,(lnkicfh)
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILCLO
-        ret
-lnkicfe call lnkicf2
-        jp prgprz0
-
-;### LNKICC -> Icon ausw‰hlen
-lnkicc  ld a,2
-        ld hl,lnkicnchs
-        call prgbro
-        jp prgprz0
-
-;### LNKBRW -> Browse-Button wurde geklickt
-lnkbrw  ld a,1
-        ld hl,prgobjlnkka
-        call prgbro
-        jp prgprz0
-
-;### LNKAPL -> Link-Fenster APPLY-Button
-lnkapl  call lnkact
-        jp prgprz0
-
-;### LNKOKY -> Link-Fenster OK-Button
-lnkoky  call lnkact
-lnkoky1 ld c,4*setlnknum
-        ld a,c
-        jp prgsub4
-
-;### LNKCNC -> Link-Fenster CANCEL/CLOSE-Button
-lnkcnc  call lnkini
-        jr lnkoky1
-
-;### LNKACT -> Link-Einstellungen ¸bernehmen
-lnkact  call lnkenc2                ;aktuellen Eintrag ¸bernehmen
-        ld e,7                      ;*** Namen, Pfade und Icons speichern
-        ld hl,jmp_sysinf
-        rst #28                     ;DE=System, IX=Data, IY=Transfer
-        push ix
-        pop de
+        ld bc,32+extlen
         ld hl,lnkcfgdat
-        ld bc,lnklenall
-        ld a,(bnknumput)
-        rst #20:dw jmp_bnkcop
-        ld hl,jmp_sysinf            ;*** Anzahlen speichern
-        ld de,256*36+6
-        ld ix,cfgicnanz
-        ld iy,66+2+6+5
-        rst #28
-        ld bc,256*8+MSC_DSK_DSKSRV   ;*** Hintergrund neu aufbauen
-        jp msgsnd
-
-
-;==============================================================================
-;### FONT-FENSTER #############################################################
-;==============================================================================
-
-fntlen  equ 96*16+2
-
-;### FNTINI -> Font-Fenster initialisieren
-fntinia dw 0    ;Font-Herkunft
-fntinib dw 0    ;Font-Buffer
-
-fntini  ld e,8                      ;*** Font holen
-        ld hl,jmp_sysinf
-        rst #28             ;DE=Adr, IX=Len
-        push de
-        ld bc,lnklenall+32+extlen
-        ld hl,lnkcfgdat
-        add hl,bc           ;HL=Ziel
-        ld (fntinib),hl
-        ld ix,prgobjfnt1a
+        add hl,bc               ;HL=preview font address (in extended data area)
+        ld (hl),000+32+8        ;set header for preview font (127 chars, small font, 8 pixels height)
+        inc hl
+        ld (hl),32
+        inc hl
+        ld (fntprvadr),hl
+        ld iy,prgobjfnt1a       ;write preview font address to text controls
         ld de,6
-        ld b,8
-fntini1 ld (ix+4),l
-        ld (ix+5),h
-        add ix,de
+        ld b,5
+        dec hl:dec hl
+fntini1 ld (iy+4),l
+        ld (iy+5),h
+        add iy,de
         djnz fntini1
-        ex de,hl
-        pop hl
-        ld (fntinia),hl
-        ld a,(prgbnknum)
+        pop hl                  ;font adr
+        ld a,ixh                ;check font type
+        or a
+        jr nz,fntini3
+        inc ixl
+        jr z,fntini2            ;**  96 -> skip nothing
+        ld bc,31*9
+        add hl,bc               ;** 255 -> skip 31 chars
+fntini2 ld de,(fntprvadr)
+        ld a,(App_BnkNum)
         add a:add a:add a:add a
-        ld bc,fntlen
-        rst #20:dw jmp_bnkcop   ;kopieren
+        ld bc,96*9
+        rst #20:dw jmp_bnkcop   ;copy
+        ret
+fntini3 ld c,1                  ;** big font from extended desktop
+        ld a,(App_BnkNum)
+        ld b,a
+        ld hl,(fntprvadr)
+        jp cplopr
+;nz=96, z=255
+fntini7 ld hl,fnttxtsz0
+        jr nz,fntini4
+        ld hl,fnttxtsz1
+fntini4 ld de,(prgtxtfnt1f+1)   ;copy " 96" or "255"
+        ld bc,3
+        ldir
+        ret
+fntini0 ld e,8                      ;*** get font infos
+        ld hl,jmp_sysinf
+        rst #28                 ;DE=Adr without header/system chars, IXL=Font type (0=96, 1=255), IXH=Font bank (0=no 255 big font)
+        ld (fntcuradr),de
+        ld (fntcursiz),ix
         ret
 
 ;### FNTLOD -> Lade-Button wurde geklickt
-fntlod  ld hl,prginpfnt2b
-        ld a,(prgbnknum)
+fntlodhnd   db 0                ;file handle
+fntlodhed   ds 2                ;font header
+fntlodcnv   ds 256              ;converting buffer
+
+fntlod  call fntlod0
+        jp c,prgerr2
+        and %01100000
+        ld de,16                ;00 -> medium
+        jr z,fntlod1
+        cp %00100000
+        ld e,9                  ;01 -> small
+        jp nz,prgerr1
+fntlod1 ld a,(fntlodhed+1)
+        cp 32
+        jr z,fntlod2            ;font start=32 -> don't skip
+        dec a
+        jp nz,prgerr1           ;font start!=1 -> not supported
+        ld d,31
+fntlod2 ld a,d
+        call fntlod7
+        jp c,prgerr1
+        ld a,(fntlodhed+0)
+        bit 5,a
+        jr z,fntlod4
+        ld de,(App_BnkNum)
+        ld hl,(fntprvadr)
+        ld bc,96*9
+        ld a,(fntlodhnd)
+        call SyFile_FILINP
+        jp c,prgerr1
+fntlod3 ld a,(fntlodhnd)
+        call SyFile_FILCLO
+        ld e,prgdatfnt_prv
+        call fntswt0
+        ld a,1
+        ld (fntprvchg),a
+        ld a,(fntdatext)
+        or a
+        jp z,prgprz0
+        ld a,(fntlodhed+0)
+        rlca
+        and 1
+        ld (prgchkfnt3a),a
+        ld e,prgdatfnt_255
+        call fntswt0
+        jp fntswt
+fntlod4 ld b,6                  ;load and convert 6*16=96 chars
+        ld hl,(fntprvadr)
+fntlod5 push bc
+        push hl
+        call fntlod9            ;do 16 chars
+        pop de
+        jp c,prgerr0
+        ld hl,fntlodcnv
+        ld bc,16*9
+        ldir
+        ex de,hl
+        pop bc
+        djnz fntlod5
+        jr fntlod3
+
+fntlod0 ld hl,prginpfnt2b           ;** open fontfile and load header (A=(fntlodhed+0), cf=1 error)
+        ld a,(App_BnkNum)
         db #dd:ld h,a
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILOPN
-        jp c,prgprz0
-        push af
-        ld de,(prgbnknum)
-        ld hl,(fntinib)
-        ld bc,fntlen
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILINP
-        pop af
-        call syscll
-        db MSC_SYS_SYSFIL
-        db FNC_FIL_FILCLO
-        ld de,256*5+256-9
-        call fntbrw0
-        jp prgprz0
+        call SyFile_FILOPN
+        ret c
+        ld (fntlodhnd),a
+        ld de,(App_BnkNum)
+        ld hl,fntlodhed
+        ld bc,2
+        call SyFile_FILINP
+        jr c,fntloda
+        xor a
+        ld hl,fntlodhed+0
+        bit 7,(hl)
+        jr z,fntlodb
+        inc hl
+        ld a,(hl)
+        ld (hl),1
+        dec hl
+fntlodb ld (fntlodtyp),a
+        ld a,(hl)
+        ret
+fntloda ld a,(fntlodhnd)
+        call SyFile_FILCLO
+        scf
+        ret
+
+fntlod7 ld d,0                      ;** skip a*e bytes in file
+        call clcm16
+        push hl:pop ix
+        ld iy,0
+        ld a,(fntlodhnd)
+        ld c,1
+        jp SyFile_FILPOI
+
+fntlod9 ld de,(App_BnkNum)          ;** load and convert up to 16 chars (-> ixh=number of loaded chars, cf=1 error)
+        ld hl,fntlodcnv
+        ld bc,16*16
+        ld a,(fntlodhnd)
+        call SyFile_FILINP      ;load 16 medium chars
+        ret c
+        ld a,16
+        jr z,fntlod8
+        ld a,c
+        and #f0
+        rrca:rrca:rrca:rrca
+fntlod8 ld ixh,a
+        ld hl,fntlodcnv
+        ld de,fntlodcnv
+        ld a,16                 ;convert 16 chars
+fntlod6 ld bc,9                 ;copy width and 8 lines
+        ldir
+        ld c,7
+        add hl,bc               ;jump to next char
+        dec a
+        jr nz,fntlod6
+        ret
 
 ;### FNTBRW -> Browse-Button wurde geklickt
 fntbrw  ld a,4
         ld hl,prginpfnt2a
         call prgbro
         jp prgprz0
-fntbrw0 ld a,(setfntnum*4+prgwinsub+2)
-        ld c,MSC_DSK_WININH
-        ld b,a
-        jp msgsnd
+
+;### FNTSWT -> switch between extended desktop enhanced font and internal font
+fntswt  ld a,1
+        ld (fntprvchg),a
+        ld a,(prgchkfnt3a)
+        dec a
+        call fntini7
+        ld e,prgdatfnt_num
+        call fntswt0
+        jp prgprz0
+fntswt0 ld a,(setfntnum*4+prgwinsub+2)
+        jp SyDesktop_WININH
 
 ;### FNTAPL -> Font-Fenster APPLY-Button
 fntapl  call fntact
+        call lngact
         jp prgprz0
 
 ;### FNTOKY -> Font-Fenster OK-Button
 fntoky  call fntact
+        call lngact
 fntoky1 ld c,4*setfntnum
         ld a,c
         jp prgsub4
 
 ;### FNTCNC -> Font-Fenster CANCEL/CLOSE-Button
 fntcnc  call fntini
+        call lngini
         jr fntoky1
 
 ;### FNTACT -> Font-Einstellungen ¸bernehmen
-fntact  ld hl,(fntinib)
-        ld de,(fntinia)
-        ld bc,fntlen
-        ld a,(prgbnknum)
-        rst #20:dw jmp_bnkcop   ;kopieren
-        ld bc,256*9+MSC_DSK_DSKSRV
-        jp msgsnd
+fntact  ld hl,(fntprvchg)       ;l=1 -> new preview loaded, h=1 -> enhanced 255 font can be switched on/off (96char systems with extended desktop)
+        dec l
+        ret nz                  ;nothing changed
+        dec h
+        ld a,(fntcursiz)        ;current system font size (0=96, 1=255)
+        jr nz,fntact1           ;no extended desktop involved
+        ld a,(prgchkfnt3a)      ;a=255 char check
+        or a
+        jr z,fntacta
+        ld c,2              ;*** external font
+        ld a,(App_BnkNum)
+        ld b,a
+        ld hl,prginpfnt2b
+        call cplopr             ;tell extended desktop to load font
+        call c,prgerr3
+        ld a,(App_MsgBuf+2)
+        ld (fntlodtyp),a        ;get writing system type
+        jr fntactb
+fntacta ld c,3                  ;tell extended desktop to release font
+        call cplopr
+        call fntini0
+        xor a
+fntact1 push af             ;*** local font
+        call fntlod0            ;open file and load header, a=(hed+0)
+        pop bc
+        jr c,fntact6
+        dec b
+        ld hl,256*00+00         ; 96 char system,  96 char file -> h=chars to skip in file, l=chars to skip in memory
+        ld de,256*31+00         ; 96 char system, 255 char file -> d=chars to skip in file, e=chars to skip in memory
+        ld c,096                ; 96 chars
+        jr nz,fntact2
+        ld hl,256*00+31         ;255 char system,  96 char file -> h=chars to skip in file, l=chars to skip in memory
+        ld de,256*00+00         ;255 char system, 255 char file -> d=chars to skip in file, e=chars to skip in memory
+        ld c,255                ;255 chars
+fntact2 push af
+        ld b,9
+        bit 5,a
+        jr nz,fntact3
+        ld b,16                 ;b=char size in file
+fntact3 ld a,(fntlodhed+1)
+        cp 32
+        jr z,fntact9
+        ex de,hl                ;h=chars to skip in file, l=chars to skip in memory, c=total chars to load/convert
+fntact9 push hl
+        ld a,l
+        ld de,9
+        call clcm16
+        ld de,(fntcuradr)
+        add hl,de
+        ex (sp),hl              ;(sp)=memdest, c=char to load, b=char size, h=skip in file
+        push bc
+        ld e,h
+        ld a,b
+        call fntlod7            ;filepointer at correct position
+        pop bc
+        pop hl                  ;c=chars to load, hl=memdest
+        pop de                  ;d[5]=font type
+        jr c,fntact5
+        bit 5,d
+        jr z,fntact7
+        inc c                       ;** file is small font -> load directly
+        ld bc,255*9
+        jr z,fntact4
+        ld bc,096*9
+fntact4 ld e,0
+        ld a,(fntlodhnd)
+        call SyFile_FILINP
+fntact5 push af
+        ld a,(fntlodhnd)
+        call SyFile_FILCLO
+        pop af
+fntact6 call c,prgerr3
+fntactb xor a
+        ld (fntprvchg),a
+        ld hl,jmp_sysinf        ;put "writing system" (fntlodtyp) to config
+        ld de,256*1+6
+        ld ix,fntlodtyp
+        ld iy,66+2+6+9+32+32
+        rst #28
+        jp SyDesktop_DSKALL     ;redraw complete desktop
+
+fntact7 push bc                     ;** file is medium font -> load and convert
+        push hl
+        call fntlod9            ;load and convert up to 16 chars (-> ixh=number of loaded chars, cf=1 error)
+        pop de
+        pop bc
+        jr c,fntact5
+        ld a,ixh
+        cp c
+        jr c,fntact8
+        ld a,c                  ;a=min(loaded,required)
+fntact8 ld b,a
+        add a
+        jr z,fntact5            ;nothing loaded -> finished
+        push bc
+        push de
+        add a:add a
+        add b
+        ld c,a                  ;bc=a*9
+        ld b,0
+        ld hl,fntlodcnv
+        ld a,(App_BnkNum)
+        rst #20:dw jmp_bnkcop   ;copy converted chars
+        pop hl
+        ld bc,16*9
+        add hl,bc
+        pop bc
+        ld a,c
+        sub 16
+        jr z,fntact5
+        ccf
+        jr nc,fntact5           ;no more chars required -> finished
+        ld c,a
+        jr fntact7
+
+
+;==============================================================================
+;### LANGUAGE TAB #############################################################
+;==============================================================================
+
+lngset  db 0,0
+
+;### LNGINI -> init language tab
+lngini  ld a,(extfnd)
+        and 1
+        inc a
+        ld (prgobjfntt),a
+        dec a
+        ret z
+        ld hl,prgtxtfnttb
+        ld (prgobjfntta+1),hl
+        ld hl,prggrpfntb
+        ld (prgwinfnt0),hl
+        ld bc,256*0+4           ;init language
+        call cplopr
+        ld hl,(App_MsgBuf+2)
+        ld (lngset),hl
+        ld a,l
+        push hl
+        ld hl,prgobjlng3d+12
+        ld ix,prgobjlng3f
+        call lngini1
+        pop af
+        ld hl,prgobjlng3e+12
+        ld ix,prgobjlng3g
+        call lngini1
+
+        xor a                   ;init keyboard layer
+        ld (lngkxa+1),a
+        ld a,(App_BnkNum)
+        ld b,a
+        ld c,5
+        ld hl,prgdatfntb1+2
+        call cplopr
+lngini6 ld a,(App_MsgBuf+2)     ;set activate/icon-check
+        ld e,a
+        and 1
+        ld (prgchklng5b),a
+        ld a,e
+        rlca
+        and 1
+        ld (prgchklng5d),a
+        ld ix,prgdatfntb1       ;show/hide icon-check
+        ld bc,256*64+00
+        bit 1,e
+        jr z,lngini7
+        ld bc,256*17+64
+lngini7 ld (ix+16+2),c
+        ld (ix+32+2),b
+        ret
+
+lngini1 push hl
+        push af
+        call lnglst1
+        pop af
+        pop ix
+lngini5 ld hl,prgobjlng3d1
+        ld e,0
+        ld bc,4
+lngini2 cp (hl)
+        jr z,lngini4
+        inc (hl)
+        jr z,lngini3
+        dec (hl)
+        inc e
+        add hl,bc
+        jr lngini2
+lngini3 dec (hl)
+lngini4 ld (ix+0),e
+        ret
+
+;### LNGACT -> activate language settings
+lngact  call lngkxa
+        ld de,(lngset)
+        ld hl,prgtxtlng3f
+        call clch2n
+        jr c,lngact1
+        ld e,c
+lngact1 ld hl,prgtxtlng3g
+        call clch2n
+        jr c,lngact2
+        ld d,c
+lngact2 ex de,hl
+        ld bc,256*1+4
+        jp cplopr
+
+;### LNGISE -> edit value, secondary language
+lngise  ld hl,prgtxtlng3g
+        ld ix,prgobjlng3e+12
+        ld e,prgdatfntb_lise
+        call clch2n
+        jr nc,lngipr1
+        xor a
+        call lnglse0
+        jr lnglse1
+
+;### LNGIPR -> edit value, primary language
+lngipr  ld hl,prgtxtlng3f
+        ld ix,prgobjlng3d+12
+        ld e,prgdatfntb_lipr
+        call clch2n
+        jr nc,lngipr1
+        xor a
+        call lnglpr0
+        jr lnglse1
+lngipr1 push de
+        ld a,c
+        call lngini5
+        pop de
+        call lnglst0
+        jr lnglse1
+
+;### LNGLSE -> list click, secondary language
+lnglse  ld a,(prgobjlng3e+12)
+        call lnglse0
+lnglse1 jp prgprz0
+lnglse0 ld ix,prgobjlng3g
+        ld e,prgdatfntb_inse
+;### LNGLST -> take new list value
+lnglst  add a:add a
+        ld l,a
+        ld h,0
+        ld bc,prgobjlng3d1
+        add hl,bc
+        ld a,(hl)
+        cp 255
+        ret z
+        push de
+        call lnglst1
+        pop de
+lnglst0 ld a,(4*4+prgwinsub+2)
+        jp SyDesktop_WININH
+lnglst1 ld e,(ix+0)
+        ld d,(ix+1)
+        call clchex
+        xor a
+        ld (de),a
+        jp strinp
+
+;### LNGLPR -> list click, primary language
+lnglpr  ld a,(prgobjlng3d+12)
+        push af
+        call lnglpr0
+        pop af
+        or a
+        jr nz,lnglse1
+        ld (prgobjlng3e+12),a
+        ld e,prgdatfntb_lise
+        call lnglst0
+        jr lnglse
+lnglpr0 ld ix,prgobjlng3f
+        ld e,prgdatfntb_inpr
+        jr lnglst
+
+;### LNGKXC -> enhanced keyboard (un)checked
+lngkxc  ld a,(prgchklng5b)
+        or a
+        jr nz,lngkxp
+        ld (prgchklng5d),a
+        inc a
+        ld (lngkxa+1),a
+        ld e,prgdatfntb_info+3
+        ld a,(4*4+prgwinsub+2)
+        call SyDesktop_WININH
+        jp prgprz0
+
+;### LNGKXP -> load enhanced keyboard preview
+lngkxp  ld a,7
+        ld hl,prgpthkexa
+        call prgbro
+        jp prgprz0
+lngkxp0 ld a,1
+        ld (lngkxa+1),a
+        ld hl,prgpthkexb
+        ld a,(App_BnkNum)
+        ld b,a
+        ld c,6
+        call cplopr                         ;load kex preview
+        ;call c,errormsg
+        call lngini6                        ;update checks
+        ld a,(App_MsgBuf+2+7)
+        ld hl,prgobjlng3d+12                ;auto-select language
+        ld ix,prgobjlng3f
+        call lngini1
+        ld de,prgdatfntb_info*256+256-4     ;form checks
+        ld a,(4*4+prgwinsub+2)
+        push af
+        call SyDesktop_WININH
+        pop af
+        ld de,prgdatfntb_lipr*256+256-3     ;form language
+        call SyDesktop_WININH
+        jp prgprz0
+
+cfgkeyflg   db 0    ;+1=keymap active, +2=keymaps switchable (always set, if cfgkeylyc>1)
+cfgkeysiz   dw 0    ;total size of additional keyboard data [behind dyntot + 255char font]
+cfgkeylyc   db 0    ;total number of keyboard layouts (1-x; 40 each)
+cfgkeympc   db 0    ;total number of keyboard maps (200 each)
+cfgkeytrc   db 0    ;total number of keyboard trees (length table at the beginning of tree data)
+cfgkeyfnt   db 0    ;required writing style (="codepage"/font)
+cfgkeylng   db 0    ;prefered language (JPN)
+
+
+;### LNGKXA -> activate/deactivate enhanced keyboard
+lngkxa  ld a,0                  ;flag, if changed
+        or a
+        ld a,(prgchklng5d)
+        rrca
+        set 6,a
+        jr z,lngkxa1
+        res 6,a
+        ld e,a
+        ld a,(prgchklng5b)
+        or a
+        jr z,lngkxa1
+        or e
+lngkxa1 ld b,a
+        ld hl,prgpthkexb
+        ld c,7
+        call cplopr             ;activate/deactivate kex
+        ;...jr c,errormessage
+        ld a,(prgchklng5b)
+        or a
+        ld hl,keydf1
+        jr z,lngkxa2
+        ld hl,jmp_sysinf        ;check if correct writing style
+        ld de,256*1+5
+        ld ix,fntlodtyp
+        ld iy,66+2+6+9+32+32
+        rst #28
+        ld a,(fntlodtyp)
+        ld hl,App_MsgBuf+2
+        cp (hl)
+        ld hl,prgfnterr
+        call nz,prginf0         ;doesn't fit -> show error
+        ld hl,keyus1
+lngkxa2 ld bc,2*80              ;set keyboard mapping to default/us
+        jp keyact1
 
 
 ;==============================================================================
 ;### SUB-ROUTINEN #############################################################
 ;==============================================================================
 
-;### CLCR16 -> Wandelt String in 16Bit Zahl um
-;### Eingabe    IX=String, A=Terminator, BC=Untergrenze (>=0), DE=Obergrenze (<=65534)
-;### Ausgabe    IX=String hinter Terminator, HL=Zahl, CF=1 -> Ung¸ltiges Format (zu groﬂ/klein, falsches Zeichen/Terminator)
-;### Veraendert AF,DE,IYL
-clcr16  ld hl,0
-        db #fd:ld l,a
-clcr161 ld a,(ix+0)
-        inc ix
-        db #fd:cp l
-        jr z,clcr163
+;### CLCH2N -> converts hex string into 8bit value
+;### Input      HL=string, 0-terminated
+;### Output     CF=0 -> C=value, CF=1 -> error
+;### Destroyed  AF,B,HL
+clch2n  ld c,0
+clch2n1 ld a,(hl)
+        or a
+        ret z
+        call clclcs
         sub "0"
-        jr c,clcr162
+        ret c
         cp 10
-        jr nc,clcr162
-        push af
-        push de
-        ld a,10
-        ex de,hl
-        call clcm16
-        pop de
-        pop af
+        jr c,clch2n2
+        sub "a"-"0"
+        ret c
+        cp 6
+        ccf
+        ret c
+        add 10
+clch2n2 ld b,a
+        ld a,c
+        add a:add a:add a:add a
+        add b
+        ld c,a
+        inc hl
+        jr clch2n1
+
+;### CLCHEX -> Converts 8bit value into hex string
+;### Input      A=value, (DE)=string
+;### Output     DE=DE+2
+;### Destroyed  AF,C
+clchex  ld c,a          ;1  a=number -> (DE)=hexdigits, DE=DE+2
+        rlca:rlca:rlca:rlca ;4
+        call clchex1    ;5
+        ld a,c          ;1  11
+clchex1 and 15          ;2
+        add "0"         ;2
+        cp "9"+1        ;2
+        jr c,clchex2    ;2/3
+        add "A"-"9"-1   ;2/0
+clchex2 ld (de),a       ;2
+        inc de          ;2
+        ret             ;3  16,5 -> 44
+
+;### CLCDEZ -> Rechnet Byte in zwei Dezimalziffern um
+;### Eingabe    A=Wert
+;### Ausgabe    L=10er-Ascii-Ziffer, H=1er-Ascii-Ziffer
+;### Veraendert AF
+clcdez  ld l,0
+clcdez1 sub 10
+        jr c,clcdez2
+        inc l
+        jr clcdez1
+clcdez2 add "0"+10
+        ld h,a
+        ld a,"0"
         add l
         ld l,a
-        ld a,0
-        adc h
-        ld h,a
-        jr clcr161
-clcr162 scf
-        ret
-clcr163 sbc hl,bc
-        ret c
-        add hl,bc
-        inc de
-        sbc hl,de
-        jr nc,clcr162
-        add hl,de
-        or a
         ret
 
 ;### CLCM16 -> Multipliziert zwei Werte (16bit)
 ;### Eingabe    A=Wert1, DE=Wert2
-;### Ausgabe    HL=Wert1*Wert2 (16bit)
+;### Ausgabe    HL=Wert1*Wert2 (16bit), A=0
 ;### Veraendert AF,DE
 clcm16  ld hl,0
         or a
@@ -2954,43 +2706,6 @@ clcm162 sla e
         rl d
         or a
         jr nz,clcm161
-        ret
-
-;### CLCN32 -> Wandelt 32Bit-Zahl in ASCII-String um (mit 0 abgeschlossen)
-;### Eingabe    DE,IX=Wert, IY=Adresse
-;### Ausgabe    IY=Adresse letztes Zeichen
-;### Veraendert AF,BC,DE,HL,IX,IY
-clcn32t dw 1,0,     10,0,     100,0,     1000,0,     10000,0
-        dw #86a0,1, #4240,#f, #9680,#98, #e100,#5f5, #ca00,#3b9a
-clcn32z ds 4
-
-clcn32  ld (clcn32z),ix
-        ld (clcn32z+2),de
-        ld ix,clcn32t+36
-        ld b,9
-        ld c,0
-clcn321 ld a,"0"
-        or a
-clcn322 ld e,(ix+0):ld d,(ix+1):ld hl,(clcn32z):  sbc hl,de:ld (clcn32z),hl
-        ld e,(ix+2):ld d,(ix+3):ld hl,(clcn32z+2):sbc hl,de:ld (clcn32z+2),hl
-        jr c,clcn325
-        inc c
-        inc a
-        jr clcn322
-clcn325 ld e,(ix+0):ld d,(ix+1):ld hl,(clcn32z):  add hl,de:ld (clcn32z),hl
-        ld e,(ix+2):ld d,(ix+3):ld hl,(clcn32z+2):adc hl,de:ld (clcn32z+2),hl
-        ld de,-4
-        add ix,de
-        inc c
-        dec c
-        jr z,clcn323
-        ld (iy+0),a
-        inc iy
-clcn323 djnz clcn321
-        ld a,(clcn32z)
-        add "0"
-        ld (iy+0),a
-        ld (iy+1),0
         ret
 
 ;### CLCLCS -> Wandelt Groﬂ- in Kleinbuchstaben um
@@ -3034,11 +2749,14 @@ strlen  push af
         ret
 
 
+;default and US keyboard definitions
+read"App-CPanel-Keyboard.asm"
+
 ;==============================================================================
 ;### DATEN-TEIL ###############################################################
 ;==============================================================================
 
-prgdatbeg
+App_BegData
 
 prgicn16c db 12,24,24:dw $+7:dw $+4,12*24:db 5
 db #88,#88,#88,#88,#88,#88,#88,#88,#88,#88,#88,#88,#11,#11,#11,#11,#11,#11,#11,#11,#38,#88,#88,#88,#1A,#9A,#9A,#9A,#9A,#9A,#9A,#91,#38,#88,#88,#88,#19,#A9,#A9,#A9,#A9,#A9,#A9,#A1,#38,#88,#88,#88
@@ -3051,26 +2769,34 @@ db #88,#88,#85,#47,#57,#75,#55,#77,#75,#55,#78,#88,#88,#88,#85,#47,#78,#85,#55,#
 icndatslf       db 2,8,8,#FF,#FF,#88,#90,#98,#90,#B8,#F0,#B8,#F0,#98,#90,#88,#90,#F0,#F0        ;Links
 icndatsrg       db 2,8,8,#FF,#FF,#88,#90,#88,#D0,#B8,#F0,#B8,#F0,#88,#D0,#88,#90,#F0,#F0        ;Rechts
 
+prgbropth  ds 4+256
+
 prgmsginf1 db "SymbOS CONTROL PANEL",0
-prgmsginf2 db " Version 2.2 (Build 240125pdt)",0
-prgmsginf3 db " Copyright <c> 2024 SymbiosiS",0
+prgmsginf2 db " Version 2.3 (Build "
+read "..\..\..\SRC-Main\build.asm"
+            db "pdt)",0
+prgmsginf3 db " Copyright <c> 2025 SymbiosiS",0
 
 prgmsgwpf1 db "Wrong platform! This Control Panel",0
 prgmsgwpf2 db "is for the "
-if computer_mode=0
+    if PLATFORM_TYPE=PLATFORM_CPC
                        db "AMSTRAD CPC.",0
-elseif computer_mode=1
+elseif PLATFORM_TYPE=PLATFORM_MSX
                        db "MSX1/2(+)/TURBOR.",0
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
                        db "AMSTRAD PCW JOYCE.",0
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
                        db "ENTERPRISE 64/128.",0
-elseif computer_mode=4
+elseif PLATFORM_TYPE=PLATFORM_SVM
                        db "SYMBOS VM.",0
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NCX
                        db "AMSTRAD NC1x0/200.",0
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
                        db "ZX SPECTRUM NEXT.",0
+elseif PLATFORM_TYPE=PLATFORM_ISA
+                       db "ISETTA TTL.",0
+elseif PLATFORM_TYPE=PLATFORM_NGZ
+                       db "NGZ80-EVO.",0
 endif
 prgmsgwpf3 db "Please replace CP.EXE .",0
 
@@ -3081,31 +2807,9 @@ prgerrdev2a db "#",0
 prgerrdev3  db "Error code: "
 prgerrdev3a db "##",0
 
-prgwintit db "Control Panel",0
-prgwinsta db "8 Object(s)",0
-prgwinmentx1 db "File",0
-prgwinmentx2 db "?",0
-prgwinmen1tx1 db "Load settings",0
-prgwinmen1tx2 db "Save settings",0
-prgwinmen1tx3 db "Autosave",0
-prgwinmen1tx4 db "Close",0
-prgwinmen2tx1 db "Helptopics",0
-prgwinmen2tx2 db "Info",0
+keyobjtxtf db "   ",0
 
-prgicnkey1a db "Keyboard",0
-prgicnmou2a db "Mouse",0
-prgicndsp3a db "Display",0
-prgicntim4a db "Date and",0:prgicntim4b db "Time",0
-prgicnfnt5a db "Font",0
-prgicnsys6a db "System",0
-prgicndev7a db "Mass",0:prgicndev7b db "Storage",0
-
-prgicnlnk8a db "Desktop",0:prgicnlnk8b db "Links",0
-prgicnlnk8c db "Startmenu",0
-
-
-
-if computer_mode=2      ;PCW -> 4farb icons
+if PLATFORM_TYPE=PLATFORM_PCW   ;PCW -> 4farb icons
 
 prgicntim1 db 6,24,24       ;Datum/Uhrzeit
 db #77,#FF,#DD,#FF,#FF,#80,#46,#0A,#3D,#0A,#0A,#C8,#C5,#05,#35,#05,#05,#AC,#C6,#68,#3D,#1A,#C2,#BE,#C5,#E1,#41,#B4,#E1,#BE,#C6,#E0,#78,#B0,#68,#BE,#C5,#61,#35,#05,#61,#BE,#C6,#68,#7F,#CE,#C2,#BE
@@ -3192,12 +2896,12 @@ db #81,#31,#EE,#EE,#EE,#33,#33,#33,#33,#23,#21,#88,#88,#13,#18,#E8,#E8,#E8,#33,#
 db #88,#88,#81,#31,#11,#13,#11,#31,#13,#21,#31,#88,#88,#88,#88,#13,#11,#32,#31,#13,#12,#13,#18,#88,#88,#88,#88,#81,#31,#13,#23,#11,#11,#31,#88,#88,#88,#88,#88,#88,#13,#11,#32,#31,#13,#18,#88,#88
 db #88,#88,#88,#88,#81,#31,#13,#11,#31,#88,#88,#88,#88,#88,#88,#88,#88,#13,#11,#13,#18,#88,#88,#88,#88,#88,#88,#88,#88,#81,#33,#31,#88,#88,#88,#88,#88,#88,#88,#88,#88,#88,#11,#18,#88,#88,#88,#88
 prgicnsys1 db 12,24,24:dw $+7:dw $+4,12*24:db 5     ;System
-db #88,#88,#88,#11,#11,#11,#11,#11,#11,#78,#88,#88,#88,#88,#81,#11,#11,#11,#11,#11,#17,#11,#88,#88,#88,#88,#11,#11,#11,#11,#11,#11,#71,#11,#88,#88,#88,#81,#67,#77,#77,#77,#77,#77,#11,#11,#88,#88
-db #88,#81,#77,#11,#11,#11,#11,#76,#11,#11,#88,#88,#88,#81,#71,#21,#F2,#1F,#21,#16,#11,#11,#88,#88,#88,#81,#71,#11,#11,#11,#11,#16,#11,#11,#88,#88,#88,#81,#71,#2F,#21,#11,#11,#16,#11,#11,#88,#88
-db #88,#81,#71,#F1,#11,#11,#11,#16,#11,#11,#88,#88,#88,#81,#71,#11,#11,#11,#11,#16,#11,#17,#88,#88,#88,#81,#77,#11,#11,#11,#11,#76,#11,#71,#88,#88,#88,#81,#76,#66,#66,#66,#66,#66,#17,#18,#88,#88
-db #88,#81,#77,#77,#77,#77,#77,#77,#71,#87,#78,#88,#88,#88,#11,#11,#71,#17,#11,#11,#18,#88,#87,#78,#88,#88,#88,#87,#88,#78,#88,#88,#88,#88,#88,#87,#88,#13,#13,#31,#33,#11,#11,#21,#11,#11,#11,#88
-db #88,#11,#11,#11,#11,#11,#11,#11,#11,#31,#31,#88,#81,#33,#33,#33,#33,#33,#33,#33,#13,#13,#13,#18,#81,#32,#82,#82,#82,#82,#82,#82,#11,#31,#31,#18,#13,#28,#28,#28,#28,#28,#28,#28,#31,#13,#13,#11
-db #13,#82,#82,#88,#88,#82,#82,#82,#31,#31,#31,#31,#13,#33,#33,#33,#33,#33,#33,#33,#31,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#23,#23,#21,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11
+db #13,#31,#31,#33,#13,#13,#31,#31,#33,#13,#13,#31,#30,#23,#13,#02,#31,#30,#23,#13,#02,#31,#30,#23,#00,#02,#30,#00,#23,#00,#02,#30,#00,#23,#00,#02,#33,#33,#33,#33,#33,#33,#33,#33,#33,#33,#33,#33
+db #11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#88,#81,#81,#81,#78,#78,#81,#11,#11,#11,#11,#11,#11,#81,#11,#81,#81,#81,#11
+db #11,#18,#18,#11,#11,#18,#11,#81,#81,#81,#81,#81,#11,#81,#11,#81,#11,#81,#11,#81,#81,#11,#81,#81,#18,#11,#81,#18,#11,#88,#88,#81,#88,#18,#78,#81,#18,#18,#18,#18,#11,#11,#11,#11,#11,#11,#11,#11
+db #18,#81,#11,#88,#11,#11,#11,#11,#11,#11,#11,#11,#18,#11,#81,#18,#11,#18,#88,#11,#81,#11,#81,#11,#11,#18,#18,#11,#11,#11,#18,#18,#18,#18,#18,#11,#11,#88,#88,#81,#11,#11,#81,#11,#81,#18,#18,#11
+db #11,#11,#11,#11,#11,#18,#11,#18,#18,#18,#18,#11,#11,#11,#11,#11,#11,#18,#88,#11,#81,#11,#81,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11,#11
+db #33,#33,#33,#33,#33,#33,#33,#33,#33,#33,#33,#33,#00,#02,#30,#00,#23,#00,#02,#30,#00,#23,#00,#02,#30,#23,#13,#02,#31,#30,#23,#13,#02,#31,#30,#23,#13,#31,#31,#33,#13,#13,#31,#31,#33,#13,#13,#31
 
 endif
 
@@ -3208,92 +2912,62 @@ prgicnlnk2 db 2,8,8,#F9,#FF,#DA,#FF,#CB,#F7,#CB,#7B,#CB,#3D,#CB,#7B,#DA,#3D,#F9,
 prgicnkey2 db 2,8,8,#26,#4D,#2B,#46,#FF,#FF,#4D,#9B,#46,#9D,#FF,#FF,#26,#4D,#2B,#46     ;Tastatur
 prgicnmou2 db 2,8,8,#10,#C0,#20,#20,#77,#10,#AF,#98,#AF,#88,#FF,#88,#FF,#88,#77,#00     ;Maus
 prgicndev2 db 2,8,8,#AD,#3E,#AD,#3E,#FF,#FE,#FE,#FE,#ED,#F6,#FE,#FE,#8F,#3E,#8C,#36     ;Mass Storage Devices
-prgicnsys2 db 2,8,8,#F0,#FE,#F0,#FE,#2D,#4F,#69,#5E,#6B,#DA,#2F,#CB,#F7,#F0,#F7,#F0     ;System
-
-prgtitkey db "Keyboard",0
-prgtitmou db "Mouse",0
-prgtitfnt db "Font",0
-prgtitprt db "Printer",0
-prgtitsys db "System",0
-prgtitlnk db "Desktop and Startmenu Links",0
-
-prgbuttxt1 db "Ok",0
-prgbuttxt2 db "Cancel",0
-prgbuttxt3 db "Apply",0
-prgbuttxt4 db "Load",0
-prgbuttxt5 db "Save",0
-
+prgicnsys2                                                                              ;System
+if     platform_type=platform_cpc
+           db 2,8,8,#f0,#fe,#f0,#fe,#2d,#4f,#69,#5e,#6b,#da,#2f,#cb,#f7,#f0,#f7,#f0
+elseif platform_type=platform_msx
+           db 2,8,8,#f0,#fe,#5a,#af,#1f,#de,#5b,#ad,#4b,#2d,#e3,#f8,#f6,#78,#e7,#78
+elseif platform_type=platform_pcw
+           db 2,8,8,#f0,#fe,#f0,#fe,#2d,#4f,#2d,#cf,#6b,#cb,#6b,#4b,#f7,#f0,#f7,#f0
+elseif platform_type=platform_epr
+           db 2,8,8,#f0,#fe,#f0,#fe,#87,#8f,#79,#ad,#3f,#8f,#0f,#bc,#f7,#f0,#f7,#f0
+elseif platform_type=platform_ncx
+           db 2,8,8,#f0,#fe,#f0,#fe,#69,#cf,#2d,#bc,#4b,#bc,#6b,#cb,#f7,#f0,#f7,#f0
+elseif platform_type=platform_svm
+           db 2,8,8,#f0,#fe,#f0,#fe,#2d,#4f,#69,#4f,#a7,#4b,#3f,#4b,#f7,#f0,#f7,#f0
+elseif platform_type=platform_znx
+           db 2,8,8,#f0,#fe,#f0,#fe,#69,#ad,#2d,#de,#4b,#ad,#6b,#ad,#f7,#f0,#f7,#f0
+elseif platform_type=platform_isa
+           db 2,8,8,#f0,#fe,#f0,#fe,#4b,#de,#5b,#ad,#6b,#8f,#4b,#ad,#f7,#f0,#f7,#f0
+elseif platform_type=platform_ngz
+           db 2,8,8,#f0,#fe,#f0,#fe,#69,#cf,#2d,#bc,#4b,#ad,#6b,#cb,#f7,#f0,#f7,#f0
+endif
 
 ;### MASS STORAGE DEVICES ######################################################
 
-prgtitdev   db "Mass Storage Devices",0
-prgtxtdev1  db "Drives",0
-prgtxtdev2  db "Settings",0
-prgtxtdev3  db "Del",0
-prgtxtdev4  db "Add",0
-prgtxtdev5  db "Name",0
-
-prgtxtdev6  db "Floppy disk",0
-prgtxtdev7  db "IDE device",0
-prgtxtdeva  db "SD/MMC card reader",0
-prgtxtdevb  db "SCSI/USB device",0
-
-prgtxtdev8  db "Removeable medium",0
-prgtxtdev9  db "Specifics",0
-prgtxtdeve  db "Drive letter",0
-prgtxtdevf  db "Double step",0
 prgtabdevga db "A",0,"B",0,"C",0,"D",0,"E",0,"F",0,"G",0,"H",0,"I",0,"J",0,"K",0,"L",0,"M",0
             db "N",0,"O",0,"P",0,"Q",0,"R",0,"S",0,"T",0,"U",0,"V",0,"W",0,"X",0,"Y",0,"Z",0
 
 prgtabdevaa db "Drive A",0              ;Ger‰teauswahl FDC
 prgtabdevab db "Drive B",0
-if computer_mode=0
+    if PLATFORM_TYPE=PLATFORM_CPC
 prgtabdevac db "HxC SD Card at A",0
 prgtabdevad db "HxC SD Card at B",0
-elseif computer_mode=1
+elseif PLATFORM_TYPE=PLATFORM_MSX
 prgtabdevac db "Drive C",0
 prgtabdevad db "Drive D",0
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
 prgtabdevac db "HxC SD Card at A",0
 prgtabdevad db "HxC SD Card at B",0
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
 prgtabdevac db "Drive C",0
 prgtabdevad db "Drive D",0
-elseif computer_mode=4
+elseif PLATFORM_TYPE=PLATFORM_SVM
 prgtabdevac db "?C",0
 prgtabdevad db "?D",0
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NCX
 prgtabdevac db "?C",0
 prgtabdevad db "?D",0
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
+prgtabdevac db "?C",0
+prgtabdevad db "?D",0
+elseif PLATFORM_TYPE=PLATFORM_ISA
+prgtabdevac db "?C",0
+prgtabdevad db "?D",0
+elseif PLATFORM_TYPE=PLATFORM_NGZ
 prgtabdevac db "?C",0
 prgtabdevad db "?D",0
 endif
-
-prgtabdevba db "Master",0               ;Ger‰teauswahl IDE
-prgtabdevbb db "Slave",0
-
-prgtabdevca db "Slot 1",0               ;Ger‰teauswahl SD
-prgtabdevcb db "Slot 2",0
-
-prgtabdevda db "Device 0",0             ;Ger‰teauswahl USB/SCSI
-prgtabdevdb db "Device 1",0
-prgtabdevdc db "Device 2",0
-prgtabdevdd db "Device 3",0
-prgtabdevde db "Device 4",0
-prgtabdevdf db "Device 5",0
-prgtabdevdg db "Device 6",0
-prgtabdevdh db "Device 7",0
-
-prgtabdevxa db "Head 0",0               ;Sub-Auswahl FDC
-prgtabdevxb db "Head 1",0
-
-prgtabdevya db "Not partitioned",0      ;Sub-Auswahl IDE/USB/SCSI/SD
-prgtabdevyb db "Primary partition 1",0
-prgtabdevyc db "Primary partition 2",0
-prgtabdevyd db "Primary partition 3",0
-prgtabdevye db "Primary partition 4",0
-
 
 ;### KEYBOARD #################################################################
 
@@ -3360,7 +3034,7 @@ prgkputxt db ".",0
 prgksltxt db "/",0
 prgksttxt db "-",0
 
-if computer_mode=0
+if PLATFORM_TYPE=PLATFORM_CPC
 keyobjtxty  equ 4
 keyobjtxts  db "CPC",0
 prgkdatxt   db "^",0
@@ -3370,7 +3044,7 @@ prgkdotxt   db ":",0
 prgksetxt   db ";",0
 prgkcotxt   db "]",0
 prgkbstxt   db "\",0
-elseif computer_mode=1
+elseif PLATFORM_TYPE=PLATFORM_MSX
 keyobjtxty  equ 4
 keyobjtxts  db "MSX",0
 prgkdatxt   db "=",0
@@ -3381,7 +3055,7 @@ prgksetxt   db "'",0
 prgkcotxt   db "`",0
 prgkbstxt   db 129,0
 prgkbstxt1  db "\",0
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
 keyobjtxty  equ 4
 keyobjtxts  db "PCW",0
 prgkdatxt   db "=",0
@@ -3391,7 +3065,7 @@ prgkdotxt   db ";",0
 prgksetxt   db "|",0
 prgkcotxt   db "#",0
 prgkbstxt   db "\",0
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
 keyobjtxty  equ 4
 keyobjtxts db " EP",0
 prgkdatxt   db "^",0
@@ -3401,7 +3075,7 @@ prgkdotxt   db ":",0
 prgksetxt   db ";",0
 prgkcotxt   db "]",0
 prgkbstxt   db "\",0
-elseif computer_mode=4
+elseif PLATFORM_TYPE=PLATFORM_SVM
 keyobjtxty  equ 48
 keyobjtxts  db "SVM",0
 prgkeqtxt   db "=",0
@@ -3411,7 +3085,27 @@ prgkcotxt   db "]",0
 prgksetxt   db ";",0
 prgkgatxt   db "`",0
 prgkbstxt   db "\",0
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NGZ
+keyobjtxty  equ 48
+keyobjtxts  db "NGZ",0
+prgkeqtxt   db "=",0
+prgkaptxt   db "'",0
+prgkoptxt   db "[",0
+prgkcotxt   db "]",0
+prgksetxt   db ";",0
+prgkgatxt   db "`",0
+prgkbstxt   db "\",0
+elseif PLATFORM_TYPE=PLATFORM_ISA
+keyobjtxty  equ 48
+keyobjtxts  db "ISA",0
+prgkeqtxt   db "=",0
+prgkaptxt   db "'",0
+prgkoptxt   db "[",0
+prgkcotxt   db "]",0
+prgksetxt   db ";",0
+prgkgatxt   db "`",0
+prgkbstxt   db "\",0
+elseif PLATFORM_TYPE=PLATFORM_NCX
 keyobjtxty  equ 4
 keyobjtxts  db "NC",0
 prgkeqtxt   db "=",0
@@ -3421,90 +3115,73 @@ prgksetxt   db ";",0
 prgkaptxt   db "'",0
 prgknstxt   db "#",0
 prgkbstxt   db "\",0
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
 keyobjtxty  equ 4
-keyobjtxts  db "NXT",0
+keyobjtxts  db "ZNX",0
 prgksetxt   db ";",0
 prgkqutxt   db 34,0
 endif
 
-keyobjtxt1 db "Definitions",0
-keyobjtxt2 db "Speed",0
-keyobjtxt3 db "Buttons",0
-keyobjtxta db "Key",0
-keyobjtxtb db "Normal",0
-keyobjtxtc db "Shift",0
-keyobjtxtd db "Control",0
-keyobjtxte db "Alt",0
-keyobjtxtf db "   ",0
-
-keyobjtxtk db "Delay",0
-keyobjtxtl db "Repeat",0
-keyobjtxtm db "Test",0
 keyobjtxtq db "00",0
 keyobjtxtr db "99",0
 
 ;### MAUS #####################################################################
 
-mouobjtxt1 db "Joystick Settings",0
-mouobjtxt2 db "Mouse Settings",0
-mouobjtxt3 db "Button Settings",0
-
-mouobjtxta db "Accel.",0
-mouobjtxtb db "Speed",0
 mouobjtxte db "00",0
 mouobjtxtf db "00",0
 mouobjtxth db "00",0
-mouobjtxti db "Swap left/right button",0
-mouobjtxtj db "DblClk",0
 mouobjtxtl db "00",0
-mouobjtxtm db "Wheel",0
 mouobjtxto db "00",0
+
+;### FONT #####################################################################
+
+prgtxtfnt1a   db "abcdefghijklmnopqrstuvwxyz",0
+prgtxtfnt1b   db "ABCDEFGHIJKLMNOPQRSTUVWXYZ",0
+prgtxtfnt1c   db "0123456789",0
+prgtxtfnt1d   db "!",34,"#$%&'()*+,-./:;<=>?@[\]^_`{|}~",0
 
 ;### SYSTEM ###################################################################
 
-prgtxtsys0a db "General",0
-prgtxtsys0b db "File types",0
-
-prgtxtsys1  db "System info",0
-prgtxtsys1a db "Platform",0
-prgtxtsys1b db "Memory",0
-prgtxtsys1d db "Version",0
-
-if computer_mode=0
+    if PLATFORM_TYPE=PLATFORM_CPC
 prgtxtsys2a db "CPC 464",0
 prgtxtsys2b db "CPC 664",0
 prgtxtsys2c db "CPC 6128",0
 prgtxtsys2d db "CPC 464+",0
 prgtxtsys2e db "CPC 6128+",0
 
-elseif computer_mode=1
+elseif PLATFORM_TYPE=PLATFORM_MSX
 prgtxtsys2r db "MSX1",0
 prgtxtsys2m db "MSX2",0
 prgtxtsys2n db "MSX2+",0
 prgtxtsys2o db "MSX turboR",0
 
-elseif computer_mode=2
+elseif PLATFORM_TYPE=PLATFORM_PCW
 prgtxtsys2p db "PCW 8xxx",0
 prgtxtsys2q db "PCW 9xxx",0
 
-elseif computer_mode=3
+elseif PLATFORM_TYPE=PLATFORM_EPR
 prgtxtsys2h db "Enterprise",0
 
-elseif computer_mode=4
+elseif PLATFORM_TYPE=PLATFORM_SVM
 prgtxtsys2i  db "SymbOS VM "
 prgtxtsys2i1 db "xx.xx",0
 
-elseif computer_mode=5
+elseif PLATFORM_TYPE=PLATFORM_NCX
 prgtxtsys2j db "NC 100",0
 prgtxtsys2k db "NC 150",0
 prgtxtsys2l db "NC 200",0
 
-elseif computer_mode=6
+elseif PLATFORM_TYPE=PLATFORM_ZNX
 prgtxtsys2s db "Spectrum Next",0
 
+elseif PLATFORM_TYPE=PLATFORM_ISA
+prgtxtsys2t  db "Isetta TTL-"
+prgtxtsys2t1 db "xxxxxx",0
+
+elseif PLATFORM_TYPE=PLATFORM_NGZ
+prgtxtsys2u  db "NGZ80-Evo"
+
 endif
-prgtxtsys2f db "[Unknown]",0
 
 prgtxtsys1y ds 30
 prgtxtsys20 ds 22
@@ -3512,55 +3189,25 @@ prgtxtsys20 ds 22
 
 prgtxtsys2g db 0
 
-prgtxtsys3  db "Miscellaneous",0
-prgtxtsys3a db "System path",0
-
-prgtxtsys3b db "SymbOS Extended Desktop",0
-prgtxtsys3d db "(requires a reboot)",0
-
-prgtxtsys3j db "Use maximum memory for",0
-prgtxtsys3k db "file selection dialogues",0
-
-prgtxtsys3e db "Autoexec",0
-prgtxtsys3h db "Boot drive",0
-
-prgtxtlnk9a db "Extension(s)",0
-prgtxtlnk9b db "Application path",0
-
 sysentext   ds 20*16
 
-;### LINK #####################################################################
 
-prgtxtlnk2a db "Desktop",0
-prgtxtlnk2b db "Startmenu",0
-prgtxtlnk2c db "Taskbar",0
-prgtxtlnk3a db "Up",0
-prgtxtlnk3b db "Down",0
-prgtxtlnk3c db "Del",0
-prgtxtlnk3d db "Add",0
-prgtxtlnk4  db "Edit entry",0
-prgtxtlnk5a db "Path",0
-prgtxtlnk5c db "Browse...",0
-prgtxtlnk6a db "Name",0
-prgtxtlnk7a db "Icon",0
-prgtxtlnk7b db "Use file icon",0
-prgtxtlnk7c db "Select icon...",0
-prgtxtlnk8a db "XPos",0
-prgtxtlnk8b db "YPos",0
+;==============================================================================
+;%%% MULTI LANGUAGE TEXTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;==============================================================================
 
-;### FONT #####################################################################
+texts_int
+read"App-CPanel-texts.asm"
+texts_int_end
 
-prgtxtfnt0a db "Font appearance",0
-prgtxtfnt0b db "Load new font",0
+list
+texts_int_len   equ texts_int_end-texts_int
+nolist
 
-prgtxtfnt1a db " !",34,"#$%&'()*+,-./",0
-prgtxtfnt1b db "0123456789:;<=>?",0
-prgtxtfnt1c db "@ABCDEFGHIJKLMNO",0
-prgtxtfnt1d db "PQRSTUVWXYZ[\]^_",0
-prgtxtfnt1e db "`abcdefghijklmno",0
-prgtxtfnt1f db "pqrstuvwxyz{|}~",0
-prgtxtfnt1g db "Little Peter is playing",0
-prgtxtfnt1h db "with the ball outside",0
+
+prgerrlod0  db 0
+prgicnlnk8d db 0
+
 
 ;### EXTENDED!!! ##############################################################
 
@@ -3570,13 +3217,16 @@ lnkcfgdat   db 0        ;ab hier Texte, Pfade, Icons und Font im verl‰ngerten Sp
 ;### TRANSFER-TEIL ############################################################
 ;==============================================================================
 
-prgtrnbeg
+App_BegTrns
+
 ;### PRGPRZS -> Stack f¸r Programm-Prozess
         ds 128
 prgstk  ds 6*2
         dw prgprz
-prgprzn db 0            ;Nummer des Taschenrechner-Prozesses
-prgmsgb ds 14
+App_PrcID db 0
+
+;### App_MsgBuf -> message buffer
+App_MsgBuf ds 14
 
 ;### HAUPT-FENSTER ############################################################
 
@@ -3585,7 +3235,7 @@ prgwindat dw #7701,0,20,20,192,90,0,0,192,90,32,24,10000,10000,prgicnsml,prgwint
 prgwinmen dw 2, 1+4,prgwinmentx1,prgwinmen1,0, 1+4,prgwinmentx2,prgwinmen2,0
 prgwinmen1 dw 5, 1,prgwinmen1tx1,cfglod,0,            1,prgwinmen1tx2,cfgsav,0
 prgwinmen1a dw   1,prgwinmen1tx3,cfgasv,0, 1+8,0,0,0, 1,prgwinmen1tx4,prgend,0
-prgwinmen2 dw 3, 1,prgwinmen2tx1,hlpopn,0, 1+8,0,0,0, 1,prgwinmen2tx2,prginf,0
+prgwinmen2 dw 3, 1,prgwinmen2tx1,prghlp,0, 1+8,0,0,0, 1,prgwinmen2tx2,prginf,0
 
 prgwingrp db 9,0:dw prgicnobj,0,0,0,0,0,0
 prgicnobj
@@ -3599,54 +3249,54 @@ dw 08,255*256+9,prgicnspr2,048,049,48,40,0  ;Mouse
 dw 28,255*256+9,prgicnspr7,096,049,48,40,0  ;Mass Storage
 dw 24,255*256+9,prgicnspr6,144,049,48,40,0  ;System
 
-if computer_mode=2      ;PCW -> 4farb icons
-prgicnspr1 dw prgicnkey1,prgicnkey1a,0,          128+4
-prgicnspr2 dw prgicnmou1,prgicnmou2a,0,          128+4
-prgicnspr3 dw prgicndsp1,prgicndsp3a,0,          128+4
+if PLATFORM_TYPE=PLATFORM_PCW      ;PCW -> 4farb icons
+prgicnspr1 dw prgicnkey1,prgicnkey1a,prgicnkey1b,128+4
+prgicnspr2 dw prgicnmou1,prgicnmou2a,prgicnmou2b,128+4
+prgicnspr3 dw prgicndsp1,prgicndsp3a,prgicndsp3b,128+4
 prgicnspr4 dw prgicntim1,prgicntim4a,prgicntim4b,128+4
-prgicnspr5 dw prgicnfnt1,prgicnfnt5a,0,          128+4
-prgicnspr6 dw prgicnsys1,prgicnsys6a,0,          128+4
+prgicnspr5 dw prgicnfnt1,prgicnfnt5a,prgicnfnt5b,128+4
+prgicnspr6 dw prgicnsys1,prgicnsys6a,prgicnsys6b,128+4
 prgicnspr7 dw prgicndev1,prgicndev7a,prgicndev7b,128+4
 prgicnspr8 dw prgicnlnk1,prgicnlnk8a,prgicnlnk8b,128+4
 else        ;sonstige -> 16farb icons
-prgicnspr1 dw prgicnkey1,prgicnkey1a,0,          128+4+16
-prgicnspr2 dw prgicnmou1,prgicnmou2a,0,          128+4+16
-prgicnspr3 dw prgicndsp1,prgicndsp3a,0,          128+4+16
+prgicnspr1 dw prgicnkey1,prgicnkey1a,prgicnkey1b,128+4+16
+prgicnspr2 dw prgicnmou1,prgicnmou2a,prgicnmou2b,128+4+16
+prgicnspr3 dw prgicndsp1,prgicndsp3a,prgicndsp3b,128+4+16
 prgicnspr4 dw prgicntim1,prgicntim4a,prgicntim4b,128+4+16
-prgicnspr5 dw prgicnfnt1,prgicnfnt5a,0,          128+4+16
-prgicnspr6 dw prgicnsys1,prgicnsys6a,0,          128+4+16
+prgicnspr5 dw prgicnfnt1,prgicnfnt5a,prgicnfnt5b,128+4+16
+prgicnspr6 dw prgicnsys1,prgicnsys6a,prgicnsys6b,128+4+16
 prgicnspr7 dw prgicndev1,prgicndev7a,prgicndev7b,128+4+16
 prgicnspr8 dw prgicnlnk1,prgicnlnk8a,prgicnlnk8b,128+4+16
 endif
 
 ;### MOUSE ####################################################################
 
-prgwinmou  dw #1501,0,80,10,128,131,0,0,128,131,128,131,128,131, prgicnmou2,prgtitmou,0,0,prggrpmou,0,0:ds 136+14
+prgwinmou  dw #1501,0,80,10,144,131,0,0,144,131,144,131,144,131, prgicnmou2,prgtitmou,0,0,prggrpmou,0,0:ds 136+14
 prggrpmou db 23,0:dw prgdatmou,0,0,3*256+2,0,0,0
 prgdatmou
 dw 00,     255*256+0,2, 0,0,1000,1000,0                 ;00=Hintergrund
-dw mouoky, 255*256+16,prgbuttxt1,  23,116,32,12,0       ;01="Ok"-Button
-dw moucnc, 255*256+16,prgbuttxt2,  58,116,32,12,0       ;02="Cancel"-Button
-dw mouapl, 255*256+16,prgbuttxt3,  93,116,32,12,0       ;03="Apply"-Button
-dw 00,     255*256+3, mouobjdat1,  0, 1,128,38,0        ;04=Rahmen Joystick-Maus
+dw mouoky, 255*256+16,prgbuttxt1,   3,116,44,12,0       ;01="Ok"-Button
+dw moucnc, 255*256+16,prgbuttxt2,  50,116,44,12,0       ;02="Cancel"-Button
+dw mouapl, 255*256+16,prgbuttxt3,  97,116,44,12,0       ;03="Apply"-Button
+dw 00,     255*256+3, mouobjdat1,  0, 1,144,38,0        ;04=Rahmen Joystick-Maus
 dw 00,     255*256+1, mouobjdata,  8, 12,30,8,0         ;05=Speed  "Accel" Text
 dw 00,     255*256+1, mouobjdatb,  8, 23,30,8,0         ;06=Speed  "Speed" Text
-dw mouslda,255*256+24,mouobjdatc, 36, 12,70,8,0         ;07=Speed  "Accel" Slider
-dw mousldb,255*256+24,mouobjdatd, 36, 23,70,8,0         ;08=Speed  "Speed" Slider
-dw 00,     255*256+1, mouobjdate,108, 12,12,8,0         ;09=Speed  "Accel" Wert
-dw 00,     255*256+1, mouobjdatf,108, 23,12,8,0         ;10=Speed  "Speed" Wert
-dw 00,     255*256+3, mouobjdat2, 0,39,128,38,0         ;11=Rahmen Proportional-Maus
+dw mouslda,255*256+24,mouobjdatc, 48, 12,74,8,0         ;07=Speed  "Accel" Slider
+dw mousldb,255*256+24,mouobjdatd, 48, 23,74,8,0         ;08=Speed  "Speed" Slider
+dw 00,     255*256+1, mouobjdate,124, 12,12,8,0         ;09=Speed  "Accel" Wert
+dw 00,     255*256+1, mouobjdatf,124, 23,12,8,0         ;10=Speed  "Speed" Wert
+dw 00,     255*256+3, mouobjdat2, 0,39,144,38,0         ;11=Rahmen Proportional-Maus
 dw 00,     255*256+1, mouobjdatb,  8, 50,30,8,0         ;12=Propor "Speed" Text
 dw 00,     255*256+1, mouobjdatm,  8, 61,30,8,0         ;13=Propor "Wheel" Text
-dw mousldc,255*256+24,mouobjdatg, 36, 50,70,8,0         ;14=Propor "Speed" Slider
-dw mouslde,255*256+24,mouobjdatn, 36, 61,70,8,0         ;15=Propor "Wheel" Slider
-dw 00,     255*256+1, mouobjdath,108, 50,12,8,0         ;16=Propor "Speed" Wert
-dw 00,     255*256+1, mouobjdato,108, 61,12,8,0         ;17=Propor "Wheel" Wert
-dw 00,     255*256+3, mouobjdat3,  0,77,128,38,0        ;18=Rahmen Button
+dw mousldc,255*256+24,mouobjdatg, 48, 50,74,8,0         ;14=Propor "Speed" Slider
+dw mouslde,255*256+24,mouobjdatn, 48, 61,74,8,0         ;15=Propor "Wheel" Slider
+dw 00,     255*256+1, mouobjdath,124, 50,12,8,0         ;16=Propor "Speed" Wert
+dw 00,     255*256+1, mouobjdato,124, 61,12,8,0         ;17=Propor "Wheel" Wert
+dw 00,     255*256+3, mouobjdat3,  0,77,144,38,0        ;18=Rahmen Button
 dw 00,     255*256+17,mouobjdati,  8, 88,112,8,0        ;19=Button "Swap" Checkbox
 dw 00,     255*256+1, mouobjdatj,  8, 99,30,8,0         ;20=Button "Dclk" Text
-dw mousldd,255*256+24,mouobjdatk, 36, 99,70,8,0         ;21=Button "Dclk" Slider
-dw 00,     255*256+1, mouobjdatl,108, 99,12,8,0         ;22=Button "Dclk" Wert
+dw mousldd,255*256+24,mouobjdatk, 48, 99,74,8,0         ;21=Button "Dclk" Slider
+dw 00,     255*256+1, mouobjdatl,124, 99,12,8,0         ;22=Button "Dclk" Wert
 
 mouobjdat1 dw mouobjtxt1,2+4
 mouobjdat2 dw mouobjtxt2,2+4
@@ -3675,13 +3325,13 @@ prggrpkey db prgdatkeyn,0:dw prgdatkey,0,0,3*256+2,0,0,0
 
 prgdatkey
 dw 00,255*256+0,2, 0,0,1000,1000,0              ;00=Hintergrund
-dw keyoky,255*256+16,prgbuttxt1,149,137,32,12,0 ;01="Ok"-Button
-dw keycnc,255*256+16,prgbuttxt2,183,137,32,12,0 ;02="Cancel"-Button
-dw keyapl,255*256+16,prgbuttxt3,217,137,32,12,0 ;03="Apply"-Button
-dw keylod,255*256+16,prgbuttxt4,  4,137,32,12,0 ;04="Load"-Button
-dw keysav,255*256+16,prgbuttxt5, 38,137,32,12,0 ;05="Save"-Button
+dw keyoky,255*256+16,prgbuttxt1,113,137,44,12,0 ;01="Ok"-Button
+dw keycnc,255*256+16,prgbuttxt2,159,137,44,12,0 ;02="Cancel"-Button
+dw keyapl,255*256+16,prgbuttxt3,205,137,44,12,0 ;03="Apply"-Button
+dw keylod,255*256+16,prgbuttxt4,  4,137,47,12,0 ;04="Load"-Button
+dw keysav,255*256+16,prgbuttxt5, 53,137,47,12,0 ;05="Save"-Button
 
-if computer_mode=0                                                                  ;***CPC***
+    if PLATFORM_TYPE=PLATFORM_CPC                   ;***CPC***
 
 dw 0  ,255*256+2 ,3+4+64+48,  3,16,12,12,0      ;"ESC"      * Reihe 1
 dw 164,255*256+16,prgk_1txt, 16,16,12,12,0      ;"1"
@@ -3762,7 +3412,7 @@ dw 0  ,255*256+2 ,3+4+64+48,198,68,12,12,0      ;"links"
 dw 0  ,255*256+2 ,3+4+64+48,211,68,12,12,0      ;"runter"
 dw 0  ,255*256+2 ,3+4+64+48,224,68,12,12,0      ;"rechts"
 
-elseif computer_mode=1                                                              ;***MSX***
+elseif PLATFORM_TYPE=PLATFORM_MSX                                    ;***MSX***
 
 dw 113,255*256+16,prgkm1txt,  3, 3,15,12,0      ;"f1"       * Reihe 0
 dw 114,255*256+16,prgkm2txt, 19, 3,15,12,0      ;"f2"
@@ -3843,7 +3493,7 @@ dw 0  ,255*256+2 ,3+4+64+48, 50,68,103,12,0     ;"SPACE"
 dw 0  ,255*256+2 ,3+4+64+48,154,68, 43,12,0     ;"ENTER"
 dw 0  ,255*256+2 ,3+4+64+48,211,68, 12,12,0     ;"runter"
 
-elseif computer_mode=2                                                              ;***PCW***
+elseif PLATFORM_TYPE=PLATFORM_PCW                                    ;***PCW***
 
 dw 0  ,255*256+2 ,3+4+64+48,  3,16,12,12,0      ;"ESC"      * Reihe 1
 dw 164,255*256+16,prgk_1txt, 16,16,12,12,0      ;"1"
@@ -3929,7 +3579,7 @@ dw 115,255*256+16,prgkf0txt,211,68,12,12,0      ;"f0"
 dw 0  ,255*256+2 ,3+4+64+48,224,68,12,12,0      ;
 dw 0  ,255*256+2 ,3+4+64+48,237,68,12,12,0      ;
 
-elseif computer_mode=3                                                              ;***EP ***
+elseif PLATFORM_TYPE=PLATFORM_EPR                                    ;***EP ***
 
 dw 113,255*256+16,prgkf1txt,  9, 3,22,12,0      ;"f1"       * Reihe 0
 dw 114,255*256+16,prgkf2txt, 32, 3,22,12,0      ;"f2"
@@ -4010,7 +3660,7 @@ dw 0  ,255*256+2 ,3+4+64+48,188,55,12,12,0      ;"ALT"
 
 dw 0  ,255*256+2 ,3+4+64+48,53,68,104,12,0      ;"SPACE"    * Reihe 5
 
-elseif computer_mode=4                                                              ;***SVM***
+elseif PLATFORM_TYPE=PLATFORM_SVM                                    ;***SVM***
 
 dw 0  ,255*256+2 ,3+4+64+48,  3, 3,12,12,0      ;"ESC"      * Reihe 0
 dw 113,255*256+16,prgkf1txt, 24, 3,12,12,0      ;"f1"
@@ -4102,7 +3752,191 @@ dw 0  ,255*256+2 ,3+4+64+48,200,68,12,12,0      ;"links"
 dw 0  ,255*256+2 ,3+4+64+48,213,68,12,12,0      ;"runter"
 dw 0  ,255*256+2 ,3+4+64+48,226,68,12,12,0      ;"rechts"
 
-elseif computer_mode=5                                                                  ;***NC***
+elseif PLATFORM_TYPE=PLATFORM_NGZ                                    ;***NGZ***
+
+dw 0  ,255*256+2 ,3+4+64+48,  3, 3,12,12,0      ;"ESC"      * Reihe 0
+dw 113,255*256+16,prgkf1txt, 24, 3,12,12,0      ;"f1"
+dw 114,255*256+16,prgkf2txt, 37, 3,12,12,0      ;"f2"
+dw 105,255*256+16,prgkf3txt, 50, 3,12,12,0      ;"f3"
+dw 120,255*256+16,prgkf4txt, 63, 3,12,12,0      ;"f4"
+dw 112,255*256+16,prgkf5txt, 85, 3,12,12,0      ;"f5"
+dw 104,255*256+16,prgkf6txt, 98, 3,12,12,0      ;"f6"
+dw 110,255*256+16,prgkf7txt,111, 3,12,12,0      ;"f7"
+dw 111,255*256+16,prgkf8txt,124, 3,12,12,0      ;"f8"
+dw 103,255*256+16,prgkf9txt,146, 3,12,12,0      ;"f9"
+dw 115,255*256+16,prgkf0txt,159, 3,12,12,0      ;"f10"
+dw 107,255*256+16,prgkfdtxt,172, 3,12,12,0      ;"f11"
+dw 0  ,255*256+2 ,3+4+64+48,185, 3,12,12,0      ;"f12"
+dw 111,255*256+2 ,3+4+64+48,200, 3,12,12,0      ;"PRT"
+dw 111,255*256+2 ,3+4+64+48,213, 3,12,12,0      ;"SCL"
+dw 111,255*256+2 ,3+4+64+48,226, 3,12,12,0      ;"PAU"
+
+dw 122,255*256+16,prgkgatxt,  3,16,12,12,0      ;"~"        * Reihe 1
+dw 164,255*256+16,prgk_1txt, 16,16,12,12,0      ;"1"
+dw 165,255*256+16,prgk_2txt, 29,16,12,12,0      ;"2"
+dw 157,255*256+16,prgk_3txt, 42,16,12,12,0      ;"3"
+dw 156,255*256+16,prgk_4txt, 55,16,12,12,0      ;"4"
+dw 149,255*256+16,prgk_5txt, 68,16,12,12,0      ;"5"
+dw 148,255*256+16,prgk_6txt, 81,16,12,12,0      ;"6"
+dw 141,255*256+16,prgk_7txt, 94,16,12,12,0      ;"7"
+dw 140,255*256+16,prgk_8txt,107,16,12,12,0      ;"8"
+dw 133,255*256+16,prgk_9txt,120,16,12,12,0      ;"9"
+dw 132,255*256+16,prgk_0txt,133,16,12,12,0      ;"0"
+dw 125,255*256+16,prgksttxt,146,16,12,12,0      ;"-"
+dw 124,255*256+16,prgkeqtxt,159,16,12,12,0      ;"="
+dw 0  ,255*256+2 ,3+4+64+48,172,16,25,12,0      ;"DEL"
+dw 0  ,255*256+2 ,3+4+64+48,200,16,12,12,0      ;"INS"
+dw 0  ,255*256+2 ,3+4+64+48,213,16,12,12,0      ;"HOM"
+dw 0  ,255*256+2 ,3+4+64+48,226,16,12,12,0      ;"PUP"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,29,19,12,0      ;"TAB"      * Reihe 2
+dw 167,255*256+16,prgk_qtxt, 23,29,12,12,0      ;"Q"
+dw 159,255*256+16,prgk_wtxt, 36,29,12,12,0      ;"W"
+dw 158,255*256+16,prgk_etxt, 49,29,12,12,0      ;"E"
+dw 150,255*256+16,prgk_rtxt, 62,29,12,12,0      ;"R"
+dw 151,255*256+16,prgk_ttxt, 75,29,12,12,0      ;"T"
+dw 143,255*256+16,prgk_ytxt, 88,29,12,12,0      ;"Y"
+dw 142,255*256+16,prgk_utxt,101,29,12,12,0      ;"U"
+dw 135,255*256+16,prgk_itxt,114,29,12,12,0      ;"I"
+dw 134,255*256+16,prgk_otxt,127,29,12,12,0      ;"O"
+dw 127,255*256+16,prgk_ptxt,140,29,12,12,0      ;"P"
+dw 126,255*256+16,prgkoptxt,153,29,12,12,0      ;"["
+dw 117,255*256+16,prgkcotxt,166,29,12,12,0      ;"]"
+dw 0  ,255*256+2 ,3+4+64+48,182,29,15,25,0      ;"RET"
+dw 120,255*256+2 ,3+4+64+48,200,29,12,12,0      ;"f4"
+dw 112,255*256+2 ,3+4+64+48,213,29,12,12,0      ;"f5"
+dw 104,255*256+2 ,3+4+64+48,226,29,12,12,0      ;"f6"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,42,22,12,0      ;"CAPS"     * Reihe 3
+dw 169,255*256+16,prgk_atxt, 26,42,12,12,0      ;"A"
+dw 160,255*256+16,prgk_stxt, 39,42,12,12,0      ;"S"
+dw 161,255*256+16,prgk_dtxt, 52,42,12,12,0      ;"D"
+dw 153,255*256+16,prgk_ftxt, 65,42,12,12,0      ;"F"
+dw 152,255*256+16,prgk_gtxt, 78,42,12,12,0      ;"G"
+dw 144,255*256+16,prgk_htxt, 91,42,12,12,0      ;"H"
+dw 145,255*256+16,prgk_jtxt,104,42,12,12,0      ;"J"
+dw 137,255*256+16,prgk_ktxt,117,42,12,12,0      ;"K"
+dw 136,255*256+16,prgk_ltxt,130,42,12,12,0      ;"L"
+dw 129,255*256+16,prgksetxt,143,42,12,12,0      ;";"
+dw 128,255*256+16,prgkaptxt,156,42,12,12,0      ;"'"
+dw 119,255*256+16,prgkbstxt,169,42,12,12,0      ;"\"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,55,25,12,0      ;"SHIFT"    * Reihe 4
+dw 171,255*256+16,prgk_ztxt, 29,55,12,12,0      ;"Z"
+dw 163,255*256+16,prgk_xtxt, 42,55,12,12,0      ;"X"
+dw 162,255*256+16,prgk_ctxt, 55,55,12,12,0      ;"C"
+dw 155,255*256+16,prgk_vtxt, 68,55,12,12,0      ;"V"
+dw 154,255*256+16,prgk_btxt, 81,55,12,12,0      ;"B"
+dw 146,255*256+16,prgk_ntxt, 94,55,12,12,0      ;"N"
+dw 138,255*256+16,prgk_mtxt,107,55,12,12,0      ;"M"
+dw 139,255*256+16,prgkkotxt,120,55,12,12,0      ;","
+dw 131,255*256+16,prgkputxt,133,55,12,12,0      ;"."
+dw 130,255*256+16,prgksltxt,146,55,12,12,0      ;"/"
+dw 0  ,255*256+2 ,3+4+64+48,159,55,38,12,0      ;"SHIFT"
+dw 0  ,255*256+2 ,3+4+64+48,213,55,12,12,0      ;"rauf"
+
+dw 0  ,255*256+2 ,3+4+64+48, 3,68, 25,12,0      ;"CTRL"     * Reihe 5
+dw 0  ,255*256+2 ,3+4+64+48,29,68, 20,12,0      ;"ALT"
+dw 0  ,255*256+2 ,3+4+64+48,50,68,100,12,0      ;"SPACE"
+dw 0  ,255*256+2 ,3+4+64+48,151,68,20,12,0      ;"ALT"
+dw 0  ,255*256+2 ,3+4+64+48,172,68,25,12,0      ;"CTRL"
+dw 0  ,255*256+2 ,3+4+64+48,200,68,12,12,0      ;"links" 
+dw 0  ,255*256+2 ,3+4+64+48,213,68,12,12,0      ;"runter"
+dw 0  ,255*256+2 ,3+4+64+48,226,68,12,12,0      ;"rechts"
+
+elseif PLATFORM_TYPE=PLATFORM_ISA                                    ;***ISA***
+
+dw 0  ,255*256+2 ,3+4+64+48,  3, 3,12,12,0      ;"ESC"      * Reihe 0
+dw 113,255*256+16,prgkf1txt, 24, 3,12,12,0      ;"f1"
+dw 114,255*256+16,prgkf2txt, 37, 3,12,12,0      ;"f2"
+dw 105,255*256+16,prgkf3txt, 50, 3,12,12,0      ;"f3"
+dw 120,255*256+16,prgkf4txt, 63, 3,12,12,0      ;"f4"
+dw 112,255*256+16,prgkf5txt, 85, 3,12,12,0      ;"f5"
+dw 104,255*256+16,prgkf6txt, 98, 3,12,12,0      ;"f6"
+dw 110,255*256+16,prgkf7txt,111, 3,12,12,0      ;"f7"
+dw 111,255*256+16,prgkf8txt,124, 3,12,12,0      ;"f8"
+dw 103,255*256+16,prgkf9txt,146, 3,12,12,0      ;"f9"
+dw 115,255*256+16,prgkf0txt,159, 3,12,12,0      ;"f10"
+dw 107,255*256+16,prgkfdtxt,172, 3,12,12,0      ;"f11"
+dw 0  ,255*256+2 ,3+4+64+48,185, 3,12,12,0      ;"f12"
+dw 111,255*256+2 ,3+4+64+48,200, 3,12,12,0      ;"PRT"
+dw 111,255*256+2 ,3+4+64+48,213, 3,12,12,0      ;"SCL"
+dw 111,255*256+2 ,3+4+64+48,226, 3,12,12,0      ;"PAU"
+
+dw 122,255*256+16,prgkgatxt,  3,16,12,12,0      ;"~"        * Reihe 1
+dw 164,255*256+16,prgk_1txt, 16,16,12,12,0      ;"1"
+dw 165,255*256+16,prgk_2txt, 29,16,12,12,0      ;"2"
+dw 157,255*256+16,prgk_3txt, 42,16,12,12,0      ;"3"
+dw 156,255*256+16,prgk_4txt, 55,16,12,12,0      ;"4"
+dw 149,255*256+16,prgk_5txt, 68,16,12,12,0      ;"5"
+dw 148,255*256+16,prgk_6txt, 81,16,12,12,0      ;"6"
+dw 141,255*256+16,prgk_7txt, 94,16,12,12,0      ;"7"
+dw 140,255*256+16,prgk_8txt,107,16,12,12,0      ;"8"
+dw 133,255*256+16,prgk_9txt,120,16,12,12,0      ;"9"
+dw 132,255*256+16,prgk_0txt,133,16,12,12,0      ;"0"
+dw 125,255*256+16,prgksttxt,146,16,12,12,0      ;"-"
+dw 124,255*256+16,prgkeqtxt,159,16,12,12,0      ;"="
+dw 0  ,255*256+2 ,3+4+64+48,172,16,25,12,0      ;"DEL"
+dw 0  ,255*256+2 ,3+4+64+48,200,16,12,12,0      ;"INS"
+dw 0  ,255*256+2 ,3+4+64+48,213,16,12,12,0      ;"HOM"
+dw 0  ,255*256+2 ,3+4+64+48,226,16,12,12,0      ;"PUP"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,29,19,12,0      ;"TAB"      * Reihe 2
+dw 167,255*256+16,prgk_qtxt, 23,29,12,12,0      ;"Q"
+dw 159,255*256+16,prgk_wtxt, 36,29,12,12,0      ;"W"
+dw 158,255*256+16,prgk_etxt, 49,29,12,12,0      ;"E"
+dw 150,255*256+16,prgk_rtxt, 62,29,12,12,0      ;"R"
+dw 151,255*256+16,prgk_ttxt, 75,29,12,12,0      ;"T"
+dw 143,255*256+16,prgk_ytxt, 88,29,12,12,0      ;"Y"
+dw 142,255*256+16,prgk_utxt,101,29,12,12,0      ;"U"
+dw 135,255*256+16,prgk_itxt,114,29,12,12,0      ;"I"
+dw 134,255*256+16,prgk_otxt,127,29,12,12,0      ;"O"
+dw 127,255*256+16,prgk_ptxt,140,29,12,12,0      ;"P"
+dw 126,255*256+16,prgkoptxt,153,29,12,12,0      ;"["
+dw 117,255*256+16,prgkcotxt,166,29,12,12,0      ;"]"
+dw 0  ,255*256+2 ,3+4+64+48,182,29,15,25,0      ;"RET"
+dw 120,255*256+2 ,3+4+64+48,200,29,12,12,0      ;"f4"
+dw 112,255*256+2 ,3+4+64+48,213,29,12,12,0      ;"f5"
+dw 104,255*256+2 ,3+4+64+48,226,29,12,12,0      ;"f6"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,42,22,12,0      ;"CAPS"     * Reihe 3
+dw 169,255*256+16,prgk_atxt, 26,42,12,12,0      ;"A"
+dw 160,255*256+16,prgk_stxt, 39,42,12,12,0      ;"S"
+dw 161,255*256+16,prgk_dtxt, 52,42,12,12,0      ;"D"
+dw 153,255*256+16,prgk_ftxt, 65,42,12,12,0      ;"F"
+dw 152,255*256+16,prgk_gtxt, 78,42,12,12,0      ;"G"
+dw 144,255*256+16,prgk_htxt, 91,42,12,12,0      ;"H"
+dw 145,255*256+16,prgk_jtxt,104,42,12,12,0      ;"J"
+dw 137,255*256+16,prgk_ktxt,117,42,12,12,0      ;"K"
+dw 136,255*256+16,prgk_ltxt,130,42,12,12,0      ;"L"
+dw 129,255*256+16,prgksetxt,143,42,12,12,0      ;";"
+dw 128,255*256+16,prgkaptxt,156,42,12,12,0      ;"'"
+dw 119,255*256+16,prgkbstxt,169,42,12,12,0      ;"\"
+
+dw 0  ,255*256+2 ,3+4+64+48,  3,55,25,12,0      ;"SHIFT"    * Reihe 4
+dw 171,255*256+16,prgk_ztxt, 29,55,12,12,0      ;"Z"
+dw 163,255*256+16,prgk_xtxt, 42,55,12,12,0      ;"X"
+dw 162,255*256+16,prgk_ctxt, 55,55,12,12,0      ;"C"
+dw 155,255*256+16,prgk_vtxt, 68,55,12,12,0      ;"V"
+dw 154,255*256+16,prgk_btxt, 81,55,12,12,0      ;"B"
+dw 146,255*256+16,prgk_ntxt, 94,55,12,12,0      ;"N"
+dw 138,255*256+16,prgk_mtxt,107,55,12,12,0      ;"M"
+dw 139,255*256+16,prgkkotxt,120,55,12,12,0      ;","
+dw 131,255*256+16,prgkputxt,133,55,12,12,0      ;"."
+dw 130,255*256+16,prgksltxt,146,55,12,12,0      ;"/"
+dw 0  ,255*256+2 ,3+4+64+48,159,55,38,12,0      ;"SHIFT"
+dw 0  ,255*256+2 ,3+4+64+48,213,55,12,12,0      ;"rauf"
+
+dw 0  ,255*256+2 ,3+4+64+48, 3,68, 25,12,0      ;"CTRL"     * Reihe 5
+dw 0  ,255*256+2 ,3+4+64+48,29,68, 20,12,0      ;"ALT"
+dw 0  ,255*256+2 ,3+4+64+48,50,68,100,12,0      ;"SPACE"
+dw 0  ,255*256+2 ,3+4+64+48,151,68,20,12,0      ;"ALT"
+dw 0  ,255*256+2 ,3+4+64+48,172,68,25,12,0      ;"CTRL"
+dw 0  ,255*256+2 ,3+4+64+48,200,68,12,12,0      ;"links" 
+dw 0  ,255*256+2 ,3+4+64+48,213,68,12,12,0      ;"runter"
+dw 0  ,255*256+2 ,3+4+64+48,226,68,12,12,0      ;"rechts"
+
+elseif PLATFORM_TYPE=PLATFORM_NCX                                    ;***NC***
 
 dw 0  ,255*256+2 ,3+4+64+48,  3,16,12,12,0      ;"ESC"      * Reihe 1
 dw 164,255*256+16,prgk_1txt, 16,16,12,12,0      ;"1"
@@ -4173,7 +4007,7 @@ dw 0  ,255*256+2 ,3+4+64+48,159,68,12,12,0      ;"links"
 dw 0  ,255*256+2 ,3+4+64+48,172,68,12,12,0      ;"rechts"
 dw 0  ,255*256+2 ,3+4+64+48,185,68,12,12,0      ;"runter"
 
-elseif computer_mode=6                                                                  ;***NXT***
+elseif PLATFORM_TYPE=PLATFORM_ZNX                                    ;***ZNX***
 
 dw 0  ,255*256+2 ,3+4+64+48,36+  3,16,12,12,0   ;"ESC"      * Reihe 1
 dw 0  ,255*256+2 ,3+4+64+48,36+ 16,16,12,12,0   ;"EDIT"
@@ -4240,24 +4074,24 @@ dw 0  ,255*256+2 ,3+4+64+48,36+165,68,12,12,0   ;"SYMB"
 
 endif
 
-dw 00,255*256+3,keyobjdat1,  0,83,112,53,0      ;78=Definition-Rahmen     *** Settings
-dw 00,255*256+3,keyobjdat2,109,83,143,53,0      ;79=Geschwindigkeits-Rahmen
+dw 00,255*256+3,keyobjdat1,  0,83,120,53,0      ;78=Definition-Rahmen     *** Settings
+dw 00,255*256+3,keyobjdat2,117,83,135,53,0      ;79=Geschwindigkeits-Rahmen
 dw 00,255*256+1,keyobjdata,  8, 93,30,8,0       ;80=Definition "Key"    Text
 dw 00,255*256+1,keyobjdatb,  8,106,30,8,0       ;81=Definition "Normal" Text
-dw 00,255*256+1,keyobjdatc, 66,106,30,8,0       ;82=Definition "Shift"  Text
+dw 00,255*256+1,keyobjdatc, 65,106,30,8,0       ;82=Definition "Shift"  Text
 dw 00,255*256+1,keyobjdatd,  8,119,30,8,0       ;83=Definition "Ctrl"   Text
-dw 00,255*256+1,keyobjdate, 66,119,30,8,0       ;84=Definition "Alt"    Text
+dw 00,255*256+1,keyobjdate, 65,119,30,8,0       ;84=Definition "Alt"    Text
 dw 00,255*256+1 ,keyobjdatf,39, 93,20, 8,0      ;85=Definition "Key"    Name
 dw 00,255*256+32,keyobjdatg,39,104,20,12,0      ;86=Definition "Normal" Input
-dw 00,255*256+32,keyobjdath,85,104,20,12,0      ;87=Definition "Shift"  Input
+dw 00,255*256+32,keyobjdath,93,104,20,12,0      ;87=Definition "Shift"  Input
 dw 00,255*256+32,keyobjdati,39,117,20,12,0      ;88=Definition "Ctrl"   Input
-dw 00,255*256+32,keyobjdatj,85,117,20,12,0      ;89=Definition "Alt"    Input
-dw 00,255*256+1,keyobjdatk,117, 93,30,8,0       ;90=Speed "Delay"  Text
-dw 00,255*256+1,keyobjdatl,117,106,30,8,0       ;91=Speed "Repeat" Text
-dw 00,255*256+1,keyobjdatm,117,119,30,8,0       ;92=Speed "Test"   Text
-dw keyspd,255*256+24,keyobjdatn,149,93,81,8,0   ;93=Speed "Delay"  Slider
-dw keyspd,255*256+24,keyobjdato,149,106,81,8,0  ;94=Speed "Repeat" Slider
-dw 00,255*256+32,keyobjdatp,149,117,96,12,0     ;95=Speed "Test"   Input
+dw 00,255*256+32,keyobjdatj,93,117,20,12,0      ;89=Definition "Alt"    Input
+dw 00,255*256+1,keyobjdatk,125, 93,30,8,0       ;90=Speed "Delay"  Text
+dw 00,255*256+1,keyobjdatl,125,106,30,8,0       ;91=Speed "Repeat" Text
+dw 00,255*256+1,keyobjdatm,125,119,30,8,0       ;92=Speed "Test"   Text
+dw keyspd,255*256+24,keyobjdatn,167,93,63,8,0   ;93=Speed "Delay"  Slider
+dw keyspd,255*256+24,keyobjdato,167,106,63,8,0  ;94=Speed "Repeat" Slider
+dw 00,255*256+32,keyobjdatp,167,117,78,12,0     ;95=Speed "Test"   Input
 dw 00,255*256+1,keyobjdatq,232, 93,12,8,0       ;96=Speed "Delay"  Wert
 dw 00,255*256+1,keyobjdatr,232,106,12,8,0       ;97=Speed "Repeat" Wert
 dw 00,255*256+1,keyobjdats,233,keyobjtxty,16,8,0    ;98=Computertyp  Text
@@ -4288,38 +4122,37 @@ keyobjdats dw keyobjtxts:db 2+4,1
 
 prgobjkey2a dw prginpfnt2b,0,0,0,0,255,0
 prginpkey2a db "kyb",0
-prginpkey2b ds 256
-
+prginpkey2b ds 64
 
 ;### MASS STORAGE DEVICES #####################################################
 
-prgwindev   dw #1501,0,50,8,128,152,0,0,128,152,128,152,128,152,prgicndev2,prgtitdev,0,0,prggrpdev,0,0:ds 136+14
+prgwindev   dw #1501,0,50,8,144,152,0,0,144,152,144,152,144,152,prgicndev2,prgtitdev,0,0,prggrpdev,0,0:ds 136+14
 prggrpdev   db 20,0:dw prgdatdev,0,0,3*256+2,0,0,0
 prgdatdev
 dw      0,255*256+ 0,         2,  0,0,1000,1000,0       ;00=Hintergrund
-dw devoky,255*256+16,prgbuttxt1,  23,137,32, 12,0       ;01="Ok"-Button
-dw devcnc,255*256+16,prgbuttxt2,  58,137,32, 12,0       ;02="Cancel"-Button
-dw devapl,255*256+16,prgbuttxt3,  93,137,32, 12,0       ;03="Apply"-Button
-dw      0,255*256+ 3,prgobjdev1,   0,01,128, 30,0       ;04=Rahmen Drives
-dw      0,255*256+ 3,prgobjdev2,   0,31,128,105,0       ;05=Rahmen Settings
-dw devdel,255*256+16,prgtxtdev3,  78,10, 20, 12,0       ;06="Del"-Button
-dw devadd,255*256+16,prgtxtdev4, 101,10, 20, 12,0       ;07="Add"-Button
+dw devoky,255*256+16,prgbuttxt1,   3,137,44, 12,0       ;01="Ok"-Button
+dw devcnc,255*256+16,prgbuttxt2,  50,137,44, 12,0       ;02="Cancel"-Button
+dw devapl,255*256+16,prgbuttxt3,  97,137,44, 12,0       ;03="Apply"-Button
+dw      0,255*256+ 3,prgobjdev1,   0,01,144, 30,0       ;04=Rahmen Drives
+dw      0,255*256+ 3,prgobjdev2,   0,31,144,105,0       ;05=Rahmen Settings
+dw devdel,255*256+16,prgtxtdev3,  86,10, 24, 12,0       ;06="Del"-Button
+dw devadd,255*256+16,prgtxtdev4, 113,10, 24, 12,0       ;07="Add"-Button
 dw      0,255*256+ 1,prgobjdev7,   7,43, 24,  8,0       ;08=Name Text
 dw      0,255*256+ 1,prgobjdevh,   7,65, 50,  8,0       ;09=DriveLetter Text
 
-dw devsel,255*256+42,prgobjdev3,   7,11, 68, 10,0       ;10=Laufwerksauswahl
-dw      0,255*256+32,prgobjdev8,  32,41, 74, 12,0       ;11=Name Input
+dw devsel,255*256+42,prgobjdev3,   7,11, 76, 10,0       ;10=Laufwerksauswahl
+dw      0,255*256+32,prgobjdev8,  42,41, 74, 12,0       ;11=Name Input
 dw      0,255*256+17,prgobjdev6,   7,55,114,  8,0       ;12=Wechseldatentr‰ger Check
-dw devlet,255*256+42,prgobjdevg,  57,64, 18, 10,0       ;13=DriveLetter Auswahl
+dw devlet,255*256+42,prgobjdevg,  73,64, 18, 10,0       ;13=DriveLetter Auswahl
 dw devtyp,255*256+18,prgobjdev4,   7,78,114,  8,0       ;14=Typ Slot 1 Radio
 prgdatdev3
 dw devtyp,255*256+18,prgobjdev5,   7,88,114,  8,0       ;15=Typ Slot 2 Radio
 prgdatdev1
-dw      0,255*256+42,prgobjdevb,  14,98,90, 10,0        ;16=Ger‰te-Auswahl (Laufwerks, Master/Slave, Device)
-dw      0,255*256+42,prgobjdevx,  14,110,90,  8,0       ;17=Kopf/Partitions-Auswahl
-dw      0,255*256+ 0,         2,  14,122,70,  8,0       ;18=Lˆsch-Fl‰che f¸r Doublestep check
+dw      0,255*256+42,prgobjdevb,  14,98, 100,10,0       ;16=Ger‰te-Auswahl (Laufwerks, Master/Slave, Device)
+dw      0,255*256+42,prgobjdevx,  14,110,100, 8,0       ;17=Kopf/Partitions-Auswahl
+dw      0,255*256+ 0,         2,  14,122,100, 8,0       ;18=Lˆsch-Fl‰che f¸r Doublestep check
 prgdatdev2
-dw      0,255*256+17,prgobjdevi,  14,122,70,  8,0       ;19=Doublestep Check
+dw      0,255*256+17,prgobjdevi,  14,122,100, 8,0       ;19=Doublestep Check
 
 prgobjdev1  dw prgtxtdev1,2+4
 prgobjdev2  dw prgtxtdev2,2+4
@@ -4376,81 +4209,9 @@ prgobjdevg1 dw 00,00*2+prgtabdevga,01,01*2+prgtabdevga,02,02*2+prgtabdevga,03,03
             dw 18,18*2+prgtabdevga,19,19*2+prgtabdevga,20,20*2+prgtabdevga,21,21*2+prgtabdevga,22,22*2+prgtabdevga,23,23*2+prgtabdevga
             dw 24,24*2+prgtabdevga,25,25*2+prgtabdevga
 
-;### LINKS ####################################################################
-
-prgwinlnk   dw #1501,0,50,5,160,167,0,0,160,167,160,167,160,167,prgicnlnk2,prgtitlnk,0,0,prggrplnk,0,0:ds 136+14
-prggrplnk   db 30,0:dw prgdatlnk,0,0,3*256+2,0,0,0
-prgdatlnk
-dw 00,     255*256+0, 2,           0,0,1000,1000,0      ;00=Hintergrund
-dw lnkoky, 255*256+16,prgbuttxt1,  55,152,32,12,0       ;01="Ok"-Button
-dw lnkcnc, 255*256+16,prgbuttxt2,  90,152,32,12,0       ;02="Cancel"-Button
-dw lnkapl, 255*256+16,prgbuttxt3, 125,152,32,12,0       ;03="Apply"-Button
-dw lnkenc, 255*256+41,prgobjlnk1, 4,   4, 92, 58,0      ;04=Liste Eintr‰ge
-dw lnklsc, 255*256+18,prgobjlnk2a,100, 4, 52,  8,0      ;05=Radio Desktop
-dw lnklsc, 255*256+18,prgobjlnk2b,100,14, 52,  8,0      ;06=Radio Startmenu
-dw lnklsc, 255*256+64,prgobjlnk2c,100,24, 52,  8,0      ;07=Radio Taskbar ##vorerst deaktiviert##
-dw lnkeup, 255*256+16,prgtxtlnk3a,100,36, 27, 12,0      ;08=Button "Up"
-dw lnkedw, 255*256+16,prgtxtlnk3b,129,36, 27, 12,0      ;09=Button "Down"
-dw lnkdel, 255*256+16,prgtxtlnk3c,100,50, 27, 12,0      ;10=Button "Del"
-dw lnkadd, 255*256+16,prgtxtlnk3d,129,50, 27, 12,0      ;11=Button "Add"
-dw 00,     255*256+3, prgobjlnk4,   0,65,160, 86,0      ;12=Rahmen Edit
-dw 00,     255*256+1, prgobjlnk6a,  8,77, 22,  8,0      ;13=Beschreibung  Name
-prgdatlnk1
-dw 00,     255*256+32,prgobjlnk6b, 32,75,120, 12,0      ;14=Input Lang    Name
-dw 00,     255*256+32,prgobjlnk6c, 32,75, 60, 12,0      ;15=Input Teil1   Name
-dw 00,     255*256+32,prgobjlnk6d, 92,75, 60, 12,0      ;16=Input Teil2   Name
-dw 00,     255*256+1, prgobjlnk5a,  8,91, 22,  8,0      ;17=Beschreibung  Pfad
-dw 00,     255*256+32,prgobjlnk5b, 32,89, 78, 12,0      ;18=Input         Pfad
-dw lnkbrw, 255*256+16,prgtxtlnk5c,112,89, 40, 12,0      ;19=Button Browse Pfad
-prgdatlnk2
-dw 00,     255*256+0, 2,           08,103,144,40,0      ;20=Fl‰che        Icon
-dw 00,     255*256+1, prgobjlnk7a,  8,105,22,  8,0      ;21=Beschreibung  Icon
-dw 00,     255*256+2, 0,           32,103,26, 26,0      ;22=Rahmen        Icon
-prgdatlnk3
-dw 00,     255*256+8, prgicnbig,   33,104,24, 24,0      ;23=Grafik        Icon
-dw lnkicf, 255*256+16,prgtxtlnk7b, 62,103,64, 12,0      ;24=Button File   Icon
-dw lnkicc, 255*256+16,prgtxtlnk7c, 62,117,64, 12,0      ;25=Button Choose Icon
-dw 00,     255*256+1, prgobjlnk8a, 32,133,22,  8,0      ;26=Beschreibung  X
-dw 00,     255*256+32,prgobjlnk8c, 54,131,32, 12,0      ;27=Input         X
-dw 00,     255*256+1, prgobjlnk8b, 90,133,22,  8,0      ;28=Beschreibung  Y
-dw 00,     255*256+32,prgobjlnk8d,112,131,32, 12,0      ;29=Input         Y
-
-lnklsttyp   db 0
-prgobjlnk2k ds 4
-prgobjlnk2a dw lnklsttyp,prgtxtlnk2a,2+4+000,prgobjlnk2k
-prgobjlnk2b dw lnklsttyp,prgtxtlnk2b,2+4+256,prgobjlnk2k
-prgobjlnk2c dw lnklsttyp,prgtxtlnk2c,2+4+512,prgobjlnk2k
-prgobjlnk4  dw prgtxtlnk4,2+4
-prgobjlnk5a dw prgtxtlnk5a,2+4
-prgobjlnk5b dw prgobjlnk5x,0,0,0,0,255,0
-prgobjlnkka db "*  ",0
-prgobjlnk5x ds 256
-lnkicnchs   db "icn",0
-lnkicnchs1  ds 256
-
-prgobjlnk6a dw prgtxtlnk6a,2+4
-prgobjlnk6b dw prgobjlnk6x,0,0,0,0,19,0
-prgobjlnk6c dw prgobjlnk6x,0,0,0,0,11,0
-prgobjlnk6d dw prgobjlnk6y,0,0,0,0,11,0
-prgobjlnk6x ds 20
-prgobjlnk6y ds 12
-prgobjlnk7a dw prgtxtlnk7a,2+4
-
-prgobjlnk8a dw prgtxtlnk8a,2+4
-prgobjlnk8b dw prgtxtlnk8b,2+4
-prgobjlnk8c dw prginplnk8c,0,0,0,0,5,0
-prginplnk8c ds 6
-prgobjlnk8d dw prginplnk8d,0,0,0,0,5,0
-prginplnk8d ds 6
-
-prgobjlnk1  dw 0,0,lnkentlst,0,256*0+1,lnkentrow,0,1
-lnkentrow   dw 0,92,00,0
-lnkentlst   dw 00,0,01,0,02,0,03,0,04,0,05,0,06,0,07,0,08,0,09,0
-            dw 10,0,11,0,12,0,13,0,14,0,15,0,16,0,17,0,18,0,19,0
-
 ;### SYSTEM ###################################################################
 
-prgwinsys   dw #1501,0,80,03,128,168,0,0,128,168,128,168,128,168, prgicnsys2,prgtitsys,0,0
+prgwinsys   dw #1501,0,80,03,150,168,0,0,150,168,150,168,150,168, prgicnsys2,prgtitsys,0,0
 prgwinsys0  dw prggrpsysa,0,0:ds 136+14
 
 prggrpsysa  db 24,0:dw prgdatsysa,0,0,4*256+3,0,0,2
@@ -4461,29 +4222,30 @@ prgobjsys0a db 0:dw prgtxtsys0a:db -1:dw prgtxtsys0b:db -1
 
 prgdatsysa
 dw 00,     255*256+0,2, 0,0,1000,1000,0                 ;00=Hintergrund
-dw systab, 255*256+20,prgobjsys0,   0, 1,128,11,0       ;01=Tab-Leiste
-dw sysoky, 255*256+16,prgbuttxt1,  23,153,32,12,0       ;02="Ok"-Button
-dw syscnc, 255*256+16,prgbuttxt2,  58,153,32,12,0       ;03="Cancel"-Button
-dw sysapl, 255*256+16,prgbuttxt3,  93,153,32,12,0       ;04="Apply"-Button
-dw 00,     255*256+3, prgobjsys1,  0, 14,128,42,0       ;05=Rahmen Info
+dw systab, 255*256+20,prgobjsys0,   0, 1,150,11,0       ;01=Tab-Leiste
+dw sysoky, 255*256+16,prgbuttxt1,   9,153,44,12,0       ;02="Ok"-Button
+dw syscnc, 255*256+16,prgbuttxt2,  56,153,44,12,0       ;03="Cancel"-Button
+dw sysapl, 255*256+16,prgbuttxt3, 103,153,44,12,0       ;04="Apply"-Button
+dw 00,     255*256+3, prgobjsys1,  0, 14,150,42,0       ;05=Rahmen Info
 dw 00,     255*256+1, prgobjsys1a, 8, 25,70, 8,0        ;06=Beschreibung Type
 dw 00,     255*256+1, prgobjsys1b, 8, 33,70, 8,0        ;07=Beschreibung Memory
 dw 00,     255*256+1, prgobjsys1d, 8, 41,70, 8,0        ;09=Beschreibung Version
-dw 00,     255*256+1, prgobjsys1e,40, 25,80, 8,0        ;10=Anzeige Type
-dw 00,     255*256+1, prgobjsys1f,40, 33,80, 8,0        ;11=Anzeige Memory
-dw 00,     255*256+1, prgobjsys1h,40, 41,80, 8,0        ;13=Anzeige Version
-dw 00,     255*256+3, prgobjsys3,  0,56,128,96,0        ;14=Rahmen Misc
+dw 00,     255*256+1, prgobjsys1e,40, 25,102,8,0        ;10=Anzeige Type
+dw 00,     255*256+1, prgobjsys1f,40, 33,102,8,0        ;11=Anzeige Memory
+dw 00,     255*256+1, prgobjsys1h,40, 41,102,8,0        ;13=Anzeige Version
+dw 00,     255*256+3, prgobjsys3,  0,56,150,96,0        ;14=Rahmen Misc
 dw 00,     255*256+1, prgobjsys3h,8, 67, 50, 8,0        ;15=Beschreibung Boot drive
-dw 00,     255*256+42,prgobjsys3i,60,66, 18,10,0        ;16=Auswahl Boot drive
+dw 00,     255*256+42,prgobjsys3i,68,66, 18,10,0        ;16=Auswahl Boot drive
 dw 00,     255*256+1, prgobjsys3a,8, 80, 50, 8,0        ;17=Beschreibung Systempfad
-dw 00,     255*256+32,prgobjsys3c,60,78, 60,12,0        ;18=Input Systempfad
+dw 00,     255*256+32,prgobjsys3c,68,78, 74,12,0        ;18=Input Systempfad
 dw 00,     255*256+1, prgobjsys3e,8,  94,42, 8,0        ;19=Beschreibung Autoexec
-dw 00,     255*256+17,prgobjsys3f,52, 94,112,8,0        ;20=Check Autoexec
-dw 00,     255*256+32,prgobjsys3g,60, 92,60,12,0        ;21=Input Autoexec
-dw 00,     255*256+17,prgobjsys3b,8, 107,111,8,0        ;22=Check SymbOS Extensions
-dw 00,     255*256+1, prgobjsys3d,16,117,111,8,0        ;23=Beschreibung SymbOS Extensions
-dw 00,     255*256+17,prgobjsys3j,8, 127,111,8,0        ;24=Check File Selector maximum
-dw 00,     255*256+1, prgobjsys3k,16,137,111,8,0        ;25=Beschreibung File Selector maximum
+dw 00,     255*256+17,prgobjsys3f,60, 94,112,8,0        ;20=Check Autoexec
+dw 00,     255*256+32,prgobjsys3g,68, 92,74,12,0        ;21=Input Autoexec
+
+dw 00,     255*256+1, prgobjsys3d,8, 137,111,8,0        ;22=Beschreibung "Reboot"
+dw 00,     255*256+17,prgobjsys3b,8, 107,111,8,0        ;23=Check Extended Desktop
+dw 00,     255*256+17,prgobjsys3j,8, 117,111,8,0        ;24=Check File Selector maximum
+dw 00,     255*256+17,prgobjsys3k,8, 127,111,8,0        ;25=Check Startmenu Icon
 
 prgobjsys1  dw prgtxtsys1,2+4
 prgobjsys1a dw prgtxtsys1a,2+4
@@ -4494,13 +4256,14 @@ prgobjsys1f dw prgtxtsys1f,2+4+256
 prgobjsys1h dw prgtxtsys1y,2+4+256
 prgobjsys3  dw prgtxtsys3,2+4
 prgobjsys3a dw prgtxtsys3a,2+4
-prgobjsys3b dw cfgextflg,prgtxtsys3b,2+4
 prgobjsys3c dw syssyspth,0,0,0,0,31,0
 prgobjsys3d dw prgtxtsys3d,2+4
+
 prgobjsys3e dw prgtxtsys3e,2+4
 
+prgobjsys3b dw cfgextflg,prgtxtsys3b,2+4
 prgobjsys3j dw cfgselflg,prgtxtsys3j,2+4
-prgobjsys3k dw prgtxtsys3k,2+4
+prgobjsys3k dw cfgicnflg,prgtxtsys3k,2+4
 
 prgobjsys3f dw sysautflg,prgtxtsys2g,2+4
 prgobjsys3g dw sysautpth,0,0,0,0,31,0
@@ -4519,24 +4282,25 @@ prgtxtsys1g db " KB Ram",0
 
 prgdatsysb
 dw 00,     255*256+0,2, 0,0,1000,1000,0                 ;00=Hintergrund
-dw systab, 255*256+20,prgobjsys0,   0, 1,128,11,0       ;01=Tab-Leiste
-dw sysoky, 255*256+16,prgbuttxt1,  23,153,32,12,0       ;02="Ok"-Button
-dw syscnc, 255*256+16,prgbuttxt2,  58,153,32,12,0       ;03="Cancel"-Button
-dw sysapl, 255*256+16,prgbuttxt3,  93,153,32,12,0       ;04="Apply"-Button
-dw sysenc, 255*256+41,prgobjsys5,   4,17,120,51,0       ;05=Liste Eintr‰ge
-dw sysdel, 255*256+16,prgtxtlnk3c, 68,70, 27,12,0       ;06=Button "Del"
-dw sysadd, 255*256+16,prgtxtlnk3d, 97,70, 27,12,0       ;07=Button "Add"
-dw 00,     255*256+3, prgobjlnk4,   0,83,128,69,0       ;08=Rahmen Edit
+dw systab, 255*256+20,prgobjsys0,   0, 1,150,11,0       ;01=Tab-Leiste
+dw sysoky, 255*256+16,prgbuttxt1,   9,153,44,12,0       ;02="Ok"-Button
+dw syscnc, 255*256+16,prgbuttxt2,  56,153,44,12,0       ;03="Cancel"-Button
+dw sysapl, 255*256+16,prgbuttxt3, 103,153,44,12,0       ;04="Apply"-Button
+dw sysenc, 255*256+41,prgobjsys5,   4,17,142,51,0       ;05=Liste Eintr‰ge
+dw sysdel, 255*256+16,prgtxtdev3,  96,70, 24,12,0       ;06=Button "Del"
+dw sysadd, 255*256+16,prgtxtdev4, 122,70, 24,12,0       ;07=Button "Add"
+dw 00,     255*256+3, prgobjlnk4,   0,83,150,69,0       ;08=Rahmen Edit
 dw 00,     255*256+1, prgobjlnk9a,  8,93, 70, 8,0       ;09=Beschreibung Extension(s)
 dw 00,     255*256+1, prgobjlnk9b, 8,122, 62, 8,0       ;10=Beschreibung Application
-dw sysbrw, 255*256+16,prgtxtlnk5c,78,119, 42,12,0       ;11=Button "Browse..."
-dw 00,     255*256+32,prgobjsysaa,  8,103,20,12,0       ;12=Input Extension 1
-dw 00,     255*256+32,prgobjsysab, 31,103,20,12,0       ;13=Input Extension 2
-dw 00,     255*256+32,prgobjsysac, 54,103,20,12,0       ;14=Input Extension 3
-dw 00,     255*256+32,prgobjsysad, 77,103,20,12,0       ;15=Input Extension 4
-dw 00,     255*256+32,prgobjsysae,100,103,20,12,0       ;16=Input Extension 5
-dw 00,     255*256+32,prgobjsysba, 8,132,112,12,0       ;17=Input Application
+dw sysbrw, 255*256+16,prgtxtlnk5c, 94,119,48,12,0       ;11=Button "Browse..."
+dw 00,     255*256+32,prgobjsysaa,  8,103,24,12,0       ;12=Input Extension 1
+dw 00,     255*256+32,prgobjsysab, 35,103,24,12,0       ;13=Input Extension 2
+dw 00,     255*256+32,prgobjsysac, 62,103,24,12,0       ;14=Input Extension 3
+dw 00,     255*256+32,prgobjsysad, 89,103,24,12,0       ;15=Input Extension 4
+dw 00,     255*256+32,prgobjsysae,116,103,24,12,0       ;16=Input Extension 5
+dw 00,     255*256+32,prgobjsysba, 8,132,134,12,0       ;17=Input Application
 
+prgobjlnk4  dw prgtxtlnk4,2+4
 prgobjlnk9a dw prgtxtlnk9a,2+4
 prgobjlnk9b dw prgtxtlnk9b,2+4
 
@@ -4551,12 +4315,12 @@ prginpsysac ds 4
 prginpsysad ds 4
 prginpsysae ds 4
 
-prgobjsysba dw prginpsysba,0,0,0,0,31,0
+prgobjsysba dw prginpsysba,0,0,0,0,32,0
 prgobjsysbb db "exe",0
-prginpsysba ds 256
+prginpsysba ds 33
 
 prgobjsys5  dw 0,0,sysentlst,0,256*0+2,sysentrow,0,1
-sysentrow   dw 0,40,00,0, 0,80,00,0
+sysentrow   dw 0,40,00,0, 0,102,00,0
 sysentlst   dw 00,20*00+sysentext,0, 01,20*01+sysentext,0, 02,20*02+sysentext,0, 03,20*03+sysentext,0
             dw 04,20*04+sysentext,0, 05,20*05+sysentext,0, 06,20*06+sysentext,0, 07,20*07+sysentext,0
             dw 08,20*08+sysentext,0, 09,20*09+sysentext,0, 10,20*10+sysentext,0, 11,20*11+sysentext,0
@@ -4564,31 +4328,32 @@ sysentlst   dw 00,20*00+sysentext,0, 01,20*01+sysentext,0, 02,20*02+sysentext,0,
 
 ;### FONTS ####################################################################
 
-prgwinfnt   dw #1501,0,50,5,128,159,0,0,128,159,128,159,128,159,prgicnfnt2,prgtitfnt,0,0,prggrpfnt,0,0:ds 136+14
-prggrpfnt   db 20,0:dw prgdatfnt,0,0,3*256+2,0,0,0
-prgdatfnt   
-dw 00,     255*256+0, 2,           0,0,1000,1000,0      ;00=Hintergrund
-dw fntoky, 255*256+16,prgbuttxt1,  22,144,32, 12,0      ;01="Ok"-Button
-dw fntcnc, 255*256+16,prgbuttxt2,  57,144,32, 12,0      ;02="Cancel"-Button
-dw fntapl, 255*256+16,prgbuttxt3,  92,144,32, 12,0      ;03="Apply"-Button
-dw 00,     255*256+1, prgobjlnk0a,  5, 3, 112, 8,0      ;04=Beschreibung Font-Erscheinung
-dw 00,     255*256+2, 3+4+0+64   ,  4,12 ,120,85,0      ;05=Box Fontanzeige
-dw 00,     255*256+5, prgobjfnt1a,  8,15, 112, 8,0      ;06=Beschreibung Font-Zeile 1
-dw 00,     255*256+5, prgobjfnt1b,  8,24, 112, 8,0      ;07=Beschreibung Font-Zeile 2
-dw 00,     255*256+5, prgobjfnt1c,  8,33, 112, 8,0      ;08=Beschreibung Font-Zeile 3
-dw 00,     255*256+5, prgobjfnt1d,  8,42, 112, 8,0      ;09=Beschreibung Font-Zeile 4
-dw 00,     255*256+5, prgobjfnt1e,  8,51, 112, 8,0      ;10=Beschreibung Font-Zeile 5
-dw 00,     255*256+5, prgobjfnt1f,  8,60, 112, 8,0      ;11=Beschreibung Font-Zeile 6
-dw 00,     255*256+5, prgobjfnt1g,  8,76, 112, 8,0      ;12=Beschreibung Font-Zeile 7
-dw 00,     255*256+5, prgobjfnt1h,  8,86, 112, 8,0      ;13=Beschreibung Font-Zeile 8
-dw 00,     255*256+0, 1,            8,72, 112, 1,0      ;14=Trennlinie
-dw 00,     255*256+1, prgobjfnt0b,  5,101,112, 8,0      ;15=Beschreibung Laden
-dw 00,     255*256+32,prgobjfnt2a,  4,111,120,12,0      ;16=Input Fontpfad
-dw fntbrw, 255*256+16,prgtxtlnk5c,  4,125, 45,12,0      ;17="Browse..."-Button
-dw fntlod, 255*256+16,prgbuttxt4,   51,125, 45,12,0     ;18="Load"-Button
-dw 00,     255*256+0, 1,            4,139,120, 1,0      ;19=Trennlinie
+prgobjfntt  db 2,2+4+48+64
+prgobjfntta db 0:dw prgtxtfntta:db -1:dw prgtxtfntta:db -1
 
-prgobjlnk0a dw prgtxtfnt0a,2+4
+prgwinfnt   dw #1501,0,50,5,188,159,0,0,188,159,188,159,188,159,prgicnfnt2,prgtitfnt,0,0
+prgwinfnt0  dw prggrpfnta,0,0:ds 136+14
+
+prggrpfnta  db 10,0:dw prgdatfnta,0,0,3*256+2,0,0,0
+prggrpfntb  db 20,0:dw prgdatfntb,0,0,3*256+2,0,0,0
+
+prgdatfnta
+dw 00,     255*256+0, 2,           0,0,1000,1000,0      ;00=Hintergrund
+dw fnttab, 255*256+20,prgobjfntt,   0, 1,188,11,0       ;01=Tab-Leiste
+dw fntoky, 255*256+16,prgbuttxt1,  47,144,44, 12,0      ;02="Ok"-Button
+dw fntcnc, 255*256+16,prgbuttxt2,  94,144,44, 12,0      ;03="Cancel"-Button
+dw fntapl, 255*256+16,prgbuttxt3, 141,144,44, 12,0      ;04="Apply"-Button
+prgdatfnt_num equ 5
+dw 00,     255*256+3, prgobjfnt0a,  0,14, 188,86,0      ;05=Rahmen Font-Erscheinung
+prgdatfnt_prv equ 6
+dw 00,     255*256+25,prvobjfnt1,   8,27 ,172,65,0      ;06=Subwin font preview
+dw 00,     255*256+3, prgobjfnt0b,  0,100,188,43,0      ;07=Rahmen Laden
+dw fntbrw, 255*256+16,prgtxtlnk5c,  8,112, 44,12,0      ;08="Browse..."-Button
+prgdatfnt1
+prgdatfnt_255 equ 9
+dw fntswt, 255*256+64,prgobjfnt3a,  8,128,172, 8,0      ;09=255 char font check
+
+prgobjfnt0a dw prgtxtfnt0a,2+4
 prgobjfnt0b dw prgtxtfnt0b,2+4
 
 prgobjfnt1a dw prgtxtfnt1a,0+4,0
@@ -4596,13 +4361,111 @@ prgobjfnt1b dw prgtxtfnt1b,0+4,0
 prgobjfnt1c dw prgtxtfnt1c,0+4,0
 prgobjfnt1d dw prgtxtfnt1d,0+4,0
 prgobjfnt1e dw prgtxtfnt1e,0+4,0
-prgobjfnt1f dw prgtxtfnt1f,0+4,0
-prgobjfnt1g dw prgtxtfnt1g,0+4,0
-prgobjfnt1h dw prgtxtfnt1h,0+4,0
 
-prgobjfnt2a dw prginpfnt2b,0,0,0,0,255,0
 prginpfnt2a db "fnt",0
-prginpfnt2b ds 256
+prginpfnt2b ds 64
+
+prgobjfnt3a dw prgchkfnt3a,prgtxtfnt3a,2+4
+prgchkfnt3a db 0
+
+prvobjfnt1  dw prvgrpfnt1,300,55,0,0,1
+prvgrpfnt1  db 7,0:dw prvdatfnt1,0,0,00*256+00,0,0,00
+prvdatfnt1
+dw 00,     255*256+0 ,0,           0, 0,1000,1000,0    ;00 Background
+dw 00,     255*256+5, prgobjfnt1a, 2, 3, 168, 8,0      ;01=Beschreibung Font-Zeile 1
+dw 00,     255*256+5, prgobjfnt1b, 2,12, 168, 8,0      ;02=Beschreibung Font-Zeile 2
+dw 00,     255*256+5, prgobjfnt1c, 2,21, 168, 8,0      ;03=Beschreibung Font-Zeile 3
+dw 00,     255*256+5, prgobjfnt1d, 2,30, 168, 8,0      ;04=Beschreibung Font-Zeile 4
+dw 00,     255*256+0, 1,           2,42, 168, 1,0      ;05=Trennlinie
+dw 00,     255*256+5, prgobjfnt1e, 2,46, 168, 8,0      ;06=Beschreibung Font-Zeile 5
+
+;### LANGUAGE #################################################################
+
+prgdatfntb
+dw 00,     255*256+0, 2,           0,0,1000,1000,0      ;00=Hintergrund
+dw fnttab, 255*256+20,prgobjfntt,   0, 1,188,11,0       ;01=Tab-Leiste
+dw fntoky, 255*256+16,prgbuttxt1,  47,144,44, 12,0      ;02="Ok"-Button
+dw fntcnc, 255*256+16,prgbuttxt2,  94,144,44, 12,0      ;03="Cancel"-Button
+dw fntapl, 255*256+16,prgbuttxt3, 141,144,44, 12,0      ;04="Apply"-Button
+dw 00,     255*256+3, prgobjlng1a,  0,14,188, 49,0      ;05=Rahmen Text packages
+
+dw 00,     255*256+1, prgobjlng3a,  8,29, 32,  8,0      ;06=primary pre-select text
+prgdatfntb_lipr equ 7
+dw lnglpr, 255*256+42,prgobjlng3d, 48,28, 82, 10,0      ;07=primary pre-select dropdown
+dw 00,     255*256+1, prgobjlng3c,136,29, 22,  8,0      ;08=primary self-defined text
+prgdatfntb_inpr equ 9
+dw lngipr, 255*256+32,prgobjlng3f,161,27, 19, 12,0      ;09=primary self-defined input
+dw 00,     255*256+1, prgobjlng3b,  8,44, 32,  8,0      ;10=fallback pre-select text
+prgdatfntb_lise equ 11
+dw lnglse, 255*256+42,prgobjlng3e, 48,43, 82, 10,0      ;11=fallback pre-select dropdown
+dw 00,     255*256+1, prgobjlng3c,136,44, 22,  8,0      ;12=fallback self-defined text
+prgdatfntb_inse equ 13
+dw lngise, 255*256+32,prgobjlng3g,161,42, 19, 12,0      ;13=fallback self-defined input
+
+dw 00,     255*256+3, prgobjlng5a,  0,63,188, 80,0      ;14=Rahmen Keyboard
+
+dw lngkxp, 255*256+16,prgtxtlnk5c, 136,73, 44,12,0      ;15="Browse"-Button
+prgdatfntb_info equ 16
+dw lngkxc, 255*256+17,prgobjlng5b,  8, 77,128, 8,0      ;16=check enhanced mapping
+prgdatfntb1
+dw 00,     255*256+64,00000000000,  8, 88,172,37,0      ;17=Subwin info
+dw 00,     255*256+64,2,            8,128,118, 8,0      ;18=check hide
+dw 00,     255*256+17,prgobjlng5d,  8,128,118, 8,0      ;19=check systray symbol
+
+prgobjlng5b dw prgchklng5b,prgtxtlng5b,2+4
+prgchklng5b db 0
+
+prgobjlng5d dw prgchklng5d,prgtxtlng5d,2+4
+prgchklng5d db 0
+
+prgpthkexa  db "kex",0
+prgpthkexb  ds 64
+
+prgobjlng1a dw prgtxtlng1a,2+4
+
+prgobjlng3a dw prgtxtlng3a,2+4
+prgobjlng3b dw prgtxtlng3b,2+4
+prgobjlng3c dw prgtxtlng3c,2+4
+
+prgtxtlng3c db "LCID#",0
+
+prgobjlng3d     dw 14,0,prgobjlng3d1,0,256*0+1,prgobjlng3d2,0,1
+prgobjlng3e     dw 14,0,prgobjlng3d1,0,256*0+1,prgobjlng3d2,0,1
+prgobjlng3d2    dw 0+0,1000,0,0
+prgobjlng3d1
+dw #00:dw prgobjlng3d_df
+dw #09:dw prgobjlng3d_eng
+dw #07:dw prgobjlng3d_deu
+dw #08:dw prgobjlng3d_ell
+dw #0a:dw prgobjlng3d_spa
+dw #0c:dw prgobjlng3d_fra
+dw #10:dw prgobjlng3d_ita
+dw #13:dw prgobjlng3d_nld
+dw #11:dw prgobjlng3d_jpn
+dw #15:dw prgobjlng3d_pol
+dw #16:dw prgobjlng3d_por
+dw #1f:dw prgobjlng3d_tur
+dw #5c:dw prgobjlng3d_chr
+dw #ff:dw prgobjlng3d_sd
+
+prgobjlng3d_eng db "ENG, English",0
+prgobjlng3d_deu db "DEU, Deutsch",0
+prgobjlng3d_ell db "ELL, Ellinika",0
+prgobjlng3d_spa db "SPA, Espanol",0
+prgobjlng3d_fra db "FRA, Francais",0
+prgobjlng3d_ita db "ITA, Italiano",0
+prgobjlng3d_nld db "NLD, Nederlands",0
+prgobjlng3d_jpn db "JPN, Nihongo",0
+prgobjlng3d_pol db "POL, Polski",0
+prgobjlng3d_por db "POR, Portugues",0
+prgobjlng3d_tur db "TUR, Turkce",0
+prgobjlng3d_chr db "CHR, Tsalagi",0
+
+prgobjlng3f dw prgtxtlng3f,0,0,0,0,2,0:prgtxtlng3f ds 3
+prgobjlng3g dw prgtxtlng3g,0,0,0,0,2,0:prgtxtlng3g ds 3
+
+prgobjlng5a dw prgtxtfnt5a,2+4
+
 
 ;### CONFIG ###################################################################
 cfgdevlet   equ 0       ;Buchstabe
@@ -4627,32 +4490,29 @@ mosdcs  db 10   ;Maus-Doppelclick-Verzˆgerung
 mosswp  db 0    ;Flag, ob Maustasten vertauschen
 moswfc  db 0    ;Rad-Geschwindigkeit
 
-prgmsginf  dw prgmsginf1,4*1+2,prgmsginf2,4*1+2,prgmsginf3,4*1+2,prgicnbig
+fntlodtyp   db 0    ;writing system (0,2,3...)
+
+prgmsginf  dw prgmsginf1,4*1+2,prgmsginf2,4*1+2,prgmsginf3,4*1+2,0,prgicnbig,prgicn16c
 prgmsgwpf  dw prgmsgwpf1,4*1+2,prgmsgwpf2,4*1+2,prgmsgwpf3,4*1+2
 prgdeverr  dw prgerrdev1,4*1+2,prgerrdev2,4*1+2,prgerrdev3,4*1+2
+prgloderr  dw prgerrlod ,4*1+2,prgerrlod0,4*1+2,prgerrlod0,4*1+2
+prgfnterr  dw prgerrfnt1,4*1+2,prgerrfnt2,4*1+2,prgerrfnt3,4*1+2
 
-cfgselflg   db 0
+cfgselflg   db 0    ;\
+cfgicnflg   db 0    ;/
 
 cfgmem
 cfgbotdrv   db "A"  ;SYMBOS.INI Laufwerk
-cfgflags1   db 0    ;Flags -> [b0]=Autosave Config, [b1]=use maximum memory for file selection
+cfgflags1   db 0    ;Settings -> [b0]=Autosave Config, [b1]=Use maximum memory for file selection dialog, [b2]=Alternative start menu button, [b3]=Autoexec, [b4]=50Hz(0)/60Hz(1)
 cfgextflg   db 0    ;Flags, ob SymbOS Extension geladen wird
 cfghrdflg   db 0    ;Hardware flags (+1=Proportional Mouse, +2=Real Time clock, +4=Mass Storage Device, +8=GFX9000)
 cfgfdctry   db 6    ;Device   -> Anzahl Wiederholungs-Versuche bei FDC-Sector-Fehler
 cfgicnanz   db 4    ;Desktop  -> Anzahl Icons
 cfgmenanz   db 6    ;Desktop  -> Anzahl Startmenu-Programm-Eintr‰ge
 cfglstanz   db 0    ;Desktop  -> Anzahl Taskleisten-Shortcuts
-cfgcpctyp   db 0    ;Hardware -> Computer-Typ
-cfgicnpos   dw 000,000
-            dw 000,044
-            dw 000,088
-            dw 000,132
-            dw 052,000
-            dw 052,044
-            dw 052,088
-            dw 052,132
+cfghrdtyp   db 0    ;Hardware -> Computer-Typ (bit 0-6)
 
-prgtrnend
+App_EndTrns
 
 relocate_table
 relocate_end
